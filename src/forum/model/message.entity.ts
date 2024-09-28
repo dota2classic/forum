@@ -18,6 +18,9 @@ export class MessageEntity {
   author: string;
 
   @Column()
+  index: number;
+
+  @Column()
   content: string;
 
   @CreateDateColumn({

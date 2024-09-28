@@ -26,7 +26,24 @@ export class ForumService implements OnModuleInit {
 
     console.log(t.id);
 
-    await this.postMessage(t.id, 'Hey msg', '175751439');
+    await this.postMessage(
+      t.id,
+      `ПИСЮН ФРИ ИГРУ ВЫЕБАЛ!!! https://dotaclassic.ru/matches/15703 
+        На кунке пес сосун!!!! лени ПЫДОР https://dotaclassic.ru/players/116514945 и ЕБЛАНЧИ ТОЖЕ!!
+        
+
+
+
+
+
+
+
+
+Cras euismod dui turpis, id eleifend magna luctus quis. Vestibulum imperdiet at justo id ultrices. Vivamus bibendum ornare nunc. Ut volutpat lectus ac pellentesque ultrices. Praesent scelerisque suscipit orci vel mollis. Cras tempus rhoncus dui quis ullamcorper. In pretium laoreet nunc, placerat pellentesque turpis sollicitudin in.
+
+`,
+      '175751439',
+    );
   }
 
   async postMessage(
@@ -37,11 +54,18 @@ export class ForumService implements OnModuleInit {
     const thread = await this.threadEntityRepository.findOneOrFail({
       where: { id: threadId },
     });
+    const idx = await this.messageEntityRepository.count({
+      where: {
+  ,      th,read_id;: threadId
+      }
+    })
 
     let msg = new MessageEntity();
     msg.thread_id = threadId;
     msg.content = content;
     msg.author = authorId;
+    msg.index = idx;
+
 
     msg = await this.messageEntityRepository.save(msg);
 
@@ -53,6 +77,7 @@ export class ForumService implements OnModuleInit {
         msg.author,
         msg.createdAt.toUTCString(),
         msg.content,
+        msg.index,
       ),
     );
 
