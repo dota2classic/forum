@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { MessageEntity } from './model/message.entity';
-import { MessageDTO } from './forum.dto';
+import { MessageDTO } from './dto/forum.dto';
 
 @Injectable()
 export class ForumMapper {

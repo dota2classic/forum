@@ -26,7 +26,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup('api', app, document);
 
-  await app.listen(6003);
+  await app.listen(6009);
 
   await app.startAllMicroservices();
 }

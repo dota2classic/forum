@@ -26,7 +26,7 @@ export class ForumService implements OnModuleInit {
 
     console.log(t.id);
 
-    await this.postMessage(t.id, 'Hey msg', 'author1');
+    await this.postMessage(t.id, 'Hey msg', '175751439');
   }
 
   async postMessage(
@@ -51,7 +51,7 @@ export class ForumService implements OnModuleInit {
         msg.thread_id,
         msg.id,
         msg.author,
-        msg.createdAt,
+        msg.createdAt.toUTCString(),
         msg.content,
       ),
     );

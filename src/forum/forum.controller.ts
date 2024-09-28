@@ -3,13 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { MessageEntity } from './model/message.entity';
 import { Repository } from 'typeorm';
 import { ThreadEntity } from './model/thread.entity';
-import { CreateMessageDTO, MessageDTO } from './forum.dto';
+import { CreateMessageDTO, MessageDTO } from './dto/forum.dto';
 import { ForumService } from './forum.service';
 import { ForumMapper } from './forum.mapper';
 import { NullableIntPipe } from '../util/pipes';
-import { ApiParam } from '@nestjs/swagger';
+import { ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
-@Controller()
+@Controller('forum')
+@ApiTags('forum')
 export class ForumController {
   constructor(
     @InjectRepository(MessageEntity)
@@ -33,11 +34,11 @@ export class ForumController {
     name: 'id',
     required: true,
   })
-  @ApiParam({
+  @ApiQuery({
     name: 'after',
     required: false,
   })
-  @ApiParam({
+  @ApiQuery({
     name: 'limit',
     required: false,
   })
