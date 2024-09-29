@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Entities, testDbConfig } from './typeorm-config';
+import { Entities, prodDbConfig } from './typeorm-config';
 import { ForumController } from './forum/forum.controller';
 import { ForumService } from './forum/forum.service';
 import { CqrsModule } from '@nestjs/cqrs';
@@ -10,7 +10,7 @@ import { ForumMapper } from './forum/forum.mapper';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot(testDbConfig),
+    TypeOrmModule.forRoot(prodDbConfig),
     TypeOrmModule.forFeature(Entities),
     CqrsModule,
     ClientsModule.register([
