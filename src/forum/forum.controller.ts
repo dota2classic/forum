@@ -3,7 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { MessageEntity } from './model/message.entity';
 import { Repository } from 'typeorm';
 import { ThreadEntity } from './model/thread.entity';
-import { CreateMessageDTO, MessageDTO } from './dto/forum.dto';
+import {
+  CreateMessageDTO,
+  CreateThreadDTO,
+  MessageDTO,
+  ThreadDTO,
+} from './dto/forum.dto';
 import { ForumService } from './forum.service';
 import { ForumMapper } from './forum.mapper';
 import { NullableIntPipe } from '../util/pipes';
@@ -22,12 +27,29 @@ export class ForumController {
   ) {}
 
   @Get('thread/:id')
-  async getThread(@Param('id') id: string) {
+  async getThread(@Param('id') id: string): Promise<ThreadDTO> {
     return this.threadEntityRepository.findOneOrFail({
       where: {
         id,
       },
     });
+  }
+
+  @Post('thread')
+  async getThreadForKey(
+    @Body() threadDto: CreateThreadDTO,
+  ): Promise<ThreadDTO> {
+    let existing = await this.threadEntityRepository.findOne({
+      where: {
+        external_id: threadDto.externalKey,
+      },
+    });
+    if (!existing) {
+      existing = new ThreadEntity();
+      existing.external_id = threadDto.externalKey;
+      await this.threadEntityRepository.save(existing);
+    }
+    return existing;
   }
 
   @ApiParam({
@@ -50,7 +72,7 @@ export class ForumController {
   ): Promise<MessageDTO[]> {
     return this.fs
       .getMessages(id, after, limit)
-      .then(it => it.map(this.mapper.mapMessage));
+      .then((it) => it.map(this.mapper.mapMessage));
   }
 
   @Post('thread/:id/message')
@@ -59,7 +81,7 @@ export class ForumController {
     @Body() dto: CreateMessageDTO,
   ): Promise<MessageDTO> {
     return this.fs
-      .postMessage(id, dto.author, dto.content)
+      .postMessage(id, dto.content, dto.author)
       .then(this.mapper.mapMessage);
   }
 }

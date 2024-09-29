@@ -6,13 +6,13 @@ import { MessageEntity } from './forum/model/message.entity';
 export const Entities = [ThreadEntity, MessageEntity];
 
 export const testDbConfig: TypeOrmModuleOptions = {
-         type: 'sqlite',
-         database: ':memory:',
-         entities: Entities,
-         synchronize: true,
-         keepConnectionAlive: true,
-         // dropSchema: true,
-       };
+  type: 'sqlite',
+  database: ':memory:',
+  entities: Entities,
+  synchronize: true,
+  keepConnectionAlive: true,
+  // dropSchema: true,
+};
 
 export const prodDbConfig: TypeOrmModuleOptions = {
   type: 'postgres',

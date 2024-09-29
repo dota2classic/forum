@@ -1,7 +1,7 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { MessageEntity } from './model/message.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MoreThan, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { ThreadEntity } from './model/thread.entity';
 import { EventBus } from '@nestjs/cqrs';
 import { MessageCreatedEvent } from '../gateway/events/message-created.event';
@@ -19,6 +19,7 @@ export class ForumService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
+    return;
     let t = new ThreadEntity();
     t.external_id = 'test1';
     t.id = 'a2a88589-3293-4090-8652-2e4d16aa6882';
@@ -47,25 +48,30 @@ Cras euismod dui turpis, id eleifend magna luctus quis. Vestibulum imperdiet at 
   }
 
   async postMessage(
-    threadId: string,
+    threadExternalId: string,
     content: string,
     authorId: string,
   ): Promise<MessageEntity> {
-    const thread = await this.threadEntityRepository.findOneOrFail({
-      where: { id: threadId },
+    let thread = await this.threadEntityRepository.findOne({
+      where: { external_id: threadExternalId },
     });
+    if (!thread) {
+      thread = new ThreadEntity();
+      thread.external_id = threadExternalId;
+
+      thread = await this.threadEntityRepository.save(thread);
+    }
     const idx = await this.messageEntityRepository.count({
       where: {
-  ,      th,read_id;: threadId
-      }
-    })
+        thread_id: thread.id,
+      },
+    });
 
     let msg = new MessageEntity();
-    msg.thread_id = threadId;
+    msg.thread_id = thread.id;
     msg.content = content;
     msg.author = authorId;
     msg.index = idx;
-
 
     msg = await this.messageEntityRepository.save(msg);
 
@@ -89,12 +95,12 @@ Cras euismod dui turpis, id eleifend magna luctus quis. Vestibulum imperdiet at 
     after: number,
     limit: number,
   ): Promise<MessageEntity[]> {
-    return this.messageEntityRepository.find({
-      where: {
-        thread_id,
-        createdAt: MoreThan(new Date(after)),
-      },
-      take: limit,
-    });
+    return this.messageEntityRepository
+      .createQueryBuilder('me')
+      .innerJoinAndSelect('me.thread', 'thread')
+      .where('thread.external_id = :thread_id', { thread_id })
+      .andWhere('me.created_at >= :after', { after: new Date(after) })
+      .take(limit)
+      .getMany();
   }
 }
