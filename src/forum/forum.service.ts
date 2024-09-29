@@ -92,15 +92,19 @@ Cras euismod dui turpis, id eleifend magna luctus quis. Vestibulum imperdiet at 
 
   async getMessages(
     thread_id: string,
-    after: number,
+    after: number | undefined,
     limit: number,
   ): Promise<MessageEntity[]> {
-    return this.messageEntityRepository
+    let query = this.messageEntityRepository
       .createQueryBuilder('me')
       .innerJoinAndSelect('me.thread', 'thread')
-      .where('thread.external_id = :thread_id', { thread_id })
-      .andWhere('me.created_at >= :after', { after: new Date(after) })
-      .take(limit)
-      .getMany();
+      .where('thread.external_id = :thread_id', { thread_id });
+
+    if (after)
+      query = query.andWhere('me.created_at >= :after', {
+        after: new Date(after),
+      });
+
+    return query.take(limit).getMany();
   }
 }
