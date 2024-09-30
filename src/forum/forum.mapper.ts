@@ -11,5 +11,6 @@ export class ForumMapper {
     author: msg.author,
     index: msg.index,
     createdAt: msg.createdAt.toUTCString(),
+    externalThreadId: msg.thread.external_id,
   });
 }

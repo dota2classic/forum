@@ -5,6 +5,7 @@ export class CreateMessageDTO {
 
 export class MessageDTO {
   threadId: string;
+  externalThreadId: string;
   id: string;
   content: string;
   author: string;

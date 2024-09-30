@@ -28,7 +28,9 @@ export class MessageEntity {
   })
   createdAt: Date;
 
-  @ManyToOne((type) => ThreadEntity, (thread) => thread.messages)
+  @ManyToOne((type) => ThreadEntity, (thread) => thread.messages, {
+    eager: true,
+  })
   @JoinColumn({
     foreignKeyConstraintName: 'FK_thread_message',
     name: 'thread_id',
