@@ -136,4 +136,22 @@ Cras euismod dui turpis, id eleifend magna luctus quis. Vestibulum imperdiet at 
 
     return q.getOneOrFail();
   }
+
+  public async getThreadPage(
+    page: number,
+    perPage: number,
+  ): Promise<[ThreadEntity[], number]> {
+    return this.threadEntityRepository
+      .createQueryBuilder('te')
+      .leftJoin(MessageEntity, 'me', 'te.id = me.thread_id')
+      .addSelect('count(me)', 'messageCount')
+      .addSelect(
+        `sum((me.created_at <= NOW() - '24 hours'::interval)::int)`,
+        'newMessageCount',
+      )
+      .groupBy('te.id, te.external_id, te.thread_type, te.title')
+      .skip(perPage * page)
+      .take(perPage)
+      .getManyAndCount();
+  }
 }

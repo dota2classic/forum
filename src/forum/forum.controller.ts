@@ -8,6 +8,7 @@ import {
   CreateThreadDTO,
   MessageDTO,
   ThreadDTO,
+  ThreadPageDto,
 } from './dto/forum.dto';
 import { ForumService } from './forum.service';
 import { ForumMapper } from './forum.mapper';
@@ -25,6 +26,21 @@ export class ForumController {
     private readonly fs: ForumService,
     private readonly mapper: ForumMapper,
   ) {}
+
+  @Get('threads')
+  async threads(
+    @Query('page', NullableIntPipe) page: number,
+    @Query('perPage', NullableIntPipe) perPage: number = 25,
+  ): Promise<ThreadPageDto> {
+    const [threads, pages] = await this.fs.getThreadPage(page, perPage);
+
+    return {
+      data: threads.map(this.mapper.mapThread),
+      page,
+      perPage,
+      pages,
+    };
+  }
 
   @Get('thread/:id')
   async getThread(@Param('id') id: string): Promise<ThreadDTO> {
