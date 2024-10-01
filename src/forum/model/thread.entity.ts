@@ -1,16 +1,24 @@
 import {
+  BeforeInsert,
   Column,
   Entity,
   Index,
   OneToMany,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
 } from 'typeorm';
 import { MessageEntity } from './message.entity';
+import { ThreadType } from '../../gateway/shared-types/thread-type';
+import { VirtualColumn2 } from '../../util/virtual-column';
 
 @Entity()
-@Index(['id', 'external_id'])
+@Index('external_id_thread_type_index', ['external_id', 'thread_type'], {
+  unique: true,
+})
 export class ThreadEntity {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryColumn({
+    unique: true,
+  })
+  @Index()
   id: string;
 
   // For now its string, subject to change
@@ -18,8 +26,22 @@ export class ThreadEntity {
   external_id: string;
 
   @Column()
+  thread_type: ThreadType;
+
+  @Column()
   title: string;
 
   @OneToMany((type) => MessageEntity, (msg) => msg.thread, { eager: false })
   messages: MessageEntity[];
+
+  @VirtualColumn2('messageCount', parseInt)
+  messageCount: number;
+
+  @VirtualColumn2('newMessageCount', parseInt)
+  newMessageCount: number;
+
+  @BeforeInsert()
+  generateId() {
+    this.id = `${this.thread_type}_${this.external_id}`;
+  }
 }

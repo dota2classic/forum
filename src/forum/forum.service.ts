@@ -6,6 +6,7 @@ import { ThreadEntity } from './model/thread.entity';
 import { EventBus } from '@nestjs/cqrs';
 import { MessageCreatedEvent } from '../gateway/events/message-created.event';
 import { ClientProxy } from '@nestjs/microservices';
+import { ThreadType } from '../gateway/shared-types/thread-type';
 
 @Injectable()
 export class ForumService implements OnModuleInit {
@@ -48,19 +49,16 @@ Cras euismod dui turpis, id eleifend magna luctus quis. Vestibulum imperdiet at 
   }
 
   async postMessage(
-    threadExternalId: string,
+    threadId: string,
     content: string,
     authorId: string,
   ): Promise<MessageEntity> {
-    let thread = await this.threadEntityRepository.findOne({
-      where: { external_id: threadExternalId },
+    let thread = await this.threadEntityRepository.findOneOrFail({
+      where: {
+        id: threadId,
+      },
     });
-    if (!thread) {
-      thread = new ThreadEntity();
-      thread.external_id = threadExternalId;
 
-      thread = await this.threadEntityRepository.save(thread);
-    }
     const idx = await this.messageEntityRepository.count({
       where: {
         thread_id: thread.id,
@@ -71,6 +69,7 @@ Cras euismod dui turpis, id eleifend magna luctus quis. Vestibulum imperdiet at 
     msg.thread_id = thread.id;
     msg.content = content;
     msg.author = authorId;
+    msg.createdAt = new Date();
     msg.index = idx;
 
     msg = await this.messageEntityRepository.save(msg);
@@ -107,5 +106,34 @@ Cras euismod dui turpis, id eleifend magna luctus quis. Vestibulum imperdiet at 
       });
 
     return query.take(limit).getMany();
+  }
+
+  async getOrCreateThread(
+    threadType: ThreadType,
+    externalId: string,
+    title: string,
+  ): Promise<ThreadEntity> {
+    const q = this.threadEntityRepository
+      .createQueryBuilder('te')
+      .leftJoin(MessageEntity, 'me', 'te.id = me.thread_id')
+      .addSelect('count(me)', 'messageCount')
+      .addSelect(
+        `sum((me.created_at <= NOW() - '24 hours'::interval)::int)`,
+        'newMessageCount',
+      )
+      .where({ thread_type: threadType, external_id: externalId })
+      .groupBy('te.id, te.external_id, te.thread_type, te.title');
+
+    const t = await q.getOne();
+
+    if (!t) {
+      const t = new ThreadEntity();
+      t.external_id = externalId;
+      t.thread_type = threadType;
+      t.title = title;
+      await this.threadEntityRepository.save(t);
+    }
+
+    return q.getOneOrFail();
   }
 }

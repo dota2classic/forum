@@ -1,6 +1,5 @@
 import {
   Column,
-  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
@@ -23,7 +22,8 @@ export class MessageEntity {
   @Column()
   content: string;
 
-  @CreateDateColumn({
+  @Column({
+    type: 'timestamptz',
     name: 'created_at',
   })
   createdAt: Date;

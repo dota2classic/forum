@@ -28,31 +28,25 @@ export class ForumController {
 
   @Get('thread/:id')
   async getThread(@Param('id') id: string): Promise<ThreadDTO> {
-    return this.threadEntityRepository.findOneOrFail({
-      where: {
-        id,
-      },
-    });
+    return this.threadEntityRepository
+      .findOneOrFail({
+        where: {
+          id,
+        },
+      })
+      .then(this.mapper.mapThread);
   }
 
   @Post('thread')
   async getThreadForKey(
     @Body() threadDto: CreateThreadDTO,
   ): Promise<ThreadDTO> {
-    let existing = await this.threadEntityRepository.findOne({
-      where: {
-        external_id: threadDto.externalKey,
-      },
-    });
-    if (!existing) {
-      existing = new ThreadEntity();
-      existing.external_id = threadDto.externalKey;
-      await this.threadEntityRepository.save(existing);
-    }
-
-    this.threadEntityRepository.createQueryBuilder('te').addSelect('');
-
-    return existing;
+    const thread = await this.fs.getOrCreateThread(
+      threadDto.threadType,
+      threadDto.externalId,
+      threadDto.title,
+    );
+    return this.mapper.mapThread(thread);
   }
 
   @ApiParam({
