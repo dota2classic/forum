@@ -17,6 +17,9 @@ export class ThreadEntity {
   @Column()
   external_id: string;
 
+  @Column()
+  title: string;
+
   @OneToMany((type) => MessageEntity, (msg) => msg.thread, { eager: false })
   messages: MessageEntity[];
 }

@@ -49,6 +49,9 @@ export class ForumController {
       existing.external_id = threadDto.externalKey;
       await this.threadEntityRepository.save(existing);
     }
+
+    this.threadEntityRepository.createQueryBuilder('te').addSelect('');
+
     return existing;
   }
 

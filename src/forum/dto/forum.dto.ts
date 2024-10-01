@@ -20,5 +20,8 @@ export class CreateThreadDTO {
 
 export class ThreadDTO {
   readonly id: string;
-  readonly external_id: string;
+  readonly externalId: string;
+  // readonly title: string;
+  // readonly messages: number;
+  // readonly newMessages: number;
 }

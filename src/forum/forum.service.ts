@@ -79,7 +79,7 @@ Cras euismod dui turpis, id eleifend magna luctus quis. Vestibulum imperdiet at 
       MessageCreatedEvent.name,
       new MessageCreatedEvent(
         msg.thread_id,
-        msg.thread.external_id,
+        thread.external_id,
         msg.id,
         msg.author,
         msg.createdAt.toUTCString(),
