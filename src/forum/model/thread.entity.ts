@@ -46,8 +46,8 @@ export class ThreadEntity {
   @VirtualColumn2('originalPoster', (t) => t)
   originalPoster: string;
 
-  @VirtualColumn2'lastMessage'', (t) => t)
-  lastMessage: MessageEnt;ity;
+  @VirtualColumn2('lastMessage', (t) => t)
+  lastMessage: MessageEntity;
 
   @BeforeInsert()
   generateId() {
