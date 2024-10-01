@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Logger,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MessageEntity } from './model/message.entity';
 import { Repository } from 'typeorm';
@@ -14,10 +22,13 @@ import { ForumService } from './forum.service';
 import { ForumMapper } from './forum.mapper';
 import { NullableIntPipe } from '../util/pipes';
 import { ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ThreadType } from '../gateway/shared-types/thread-type';
 
 @Controller('forum')
 @ApiTags('forum')
 export class ForumController {
+  private readonly logger = new Logger(ForumController.name);
+
   constructor(
     @InjectRepository(MessageEntity)
     private readonly messageEntityRepository: Repository<MessageEntity>,
@@ -27,12 +38,31 @@ export class ForumController {
     private readonly mapper: ForumMapper,
   ) {}
 
+  @ApiQuery({
+    name: 'page',
+    required: true,
+  })
+  @ApiQuery({
+    name: 'perPage',
+    required: false,
+  })
+  @ApiQuery({
+    name: 'threadType',
+    required: false,
+    enum: ThreadType,
+    enumName: 'ThreadType',
+  })
   @Get('threads')
   async threads(
     @Query('page', NullableIntPipe) page: number,
     @Query('perPage', NullableIntPipe) perPage: number = 25,
+    @Query('threadType') threadType?: ThreadType,
   ): Promise<ThreadPageDto> {
-    const [threads, pages] = await this.fs.getThreadPage(page, perPage);
+    const [threads, pages] = await this.fs.getThreadPage(
+      page,
+      perPage,
+      threadType,
+    );
 
     return {
       data: threads.map(this.mapper.mapThread),
@@ -44,13 +74,8 @@ export class ForumController {
 
   @Get('thread/:id')
   async getThread(@Param('id') id: string): Promise<ThreadDTO> {
-    return this.threadEntityRepository
-      .findOneOrFail({
-        where: {
-          id,
-        },
-      })
-      .then(this.mapper.mapThread);
+    this.threadView(id);
+    return this.fs.getThread(id).then(this.mapper.mapThread);
   }
 
   @Post('thread')
@@ -62,7 +87,22 @@ export class ForumController {
       threadDto.externalId,
       threadDto.title,
     );
-    return this.mapper.mapThread(thread);
+    if (threadDto.opMessage) {
+      await this.fs.postMessage(
+        thread.id,
+        threadDto.opMessage.content,
+        threadDto.opMessage.author,
+      );
+    }
+    this.threadView(thread.id);
+
+    return this.mapper.mapThread(
+      await this.fs.getOrCreateThread(
+        threadDto.threadType,
+        threadDto.externalId,
+        threadDto.title,
+      ),
+    );
   }
 
   @ApiParam({
@@ -83,6 +123,7 @@ export class ForumController {
     @Query('after', NullableIntPipe) after?: number,
     @Query('limit', NullableIntPipe) limit: number = 10,
   ): Promise<MessageDTO[]> {
+    this.threadView(id);
     return this.fs
       .getMessages(id, after, limit)
       .then((it) => it.map(this.mapper.mapMessage));
@@ -96,5 +137,11 @@ export class ForumController {
     return this.fs
       .postMessage(id, dto.content, dto.author)
       .then(this.mapper.mapMessage);
+  }
+
+  private threadView(id: string) {
+    this.fs
+      .threadView(id)
+      .then(() => this.logger.log('Thread view registered'));
   }
 }

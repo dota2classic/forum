@@ -7,9 +7,9 @@ export class CreateMessageDTO {
   readonly content: string;
 }
 
+
 export class MessageDTO {
   threadId: string;
-  externalThreadId: string;
   id: string;
   content: string;
   author: string;
@@ -22,16 +22,25 @@ export class CreateThreadDTO {
   @ApiProperty({ enum: ThreadType, enumName: 'ThreadType' })
   readonly threadType: ThreadType;
   readonly title: string;
+
+  readonly opMessage?: CreateMessageDTO;
 }
 
 export class ThreadDTO {
   readonly id: string;
   readonly externalId: string;
-  readonly threadType: string;
+
+  @ApiProperty({ enum: ThreadType, enumName: 'ThreadType' })
+  readonly threadType: ThreadType;
   readonly title: string;
+
+  readonly views: number;
 
   readonly messageCount: number;
   readonly newMessageCount: number;
+  readonly originalPoster: string;
+
+  readonly lastMessage: MessageDTO;
 }
 
 export class ThreadPageDto extends Page<ThreadDTO> {

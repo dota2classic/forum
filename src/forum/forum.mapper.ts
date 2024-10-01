@@ -12,7 +12,6 @@ export class ForumMapper {
     author: msg.author,
     index: msg.index,
     createdAt: msg.createdAt.toUTCString(),
-    externalThreadId: msg.thread.external_id,
   });
 
   public mapThread = (existing: ThreadEntity): ThreadDTO => {
@@ -22,7 +21,10 @@ export class ForumMapper {
       threadType: existing.thread_type,
       title: existing.title,
       messageCount: existing.messageCount,
+      views: existing.views,
       newMessageCount: existing.newMessageCount,
+      originalPoster: existing.originalPoster,
+      lastMessage: this.mapMessage(existing.lastMessage),
     };
   };
 }

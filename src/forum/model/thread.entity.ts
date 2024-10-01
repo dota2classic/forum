@@ -31,6 +31,9 @@ export class ThreadEntity {
   @Column()
   title: string;
 
+  @Column({ default: 0 })
+  views: number;
+
   @OneToMany((type) => MessageEntity, (msg) => msg.thread, { eager: false })
   messages: MessageEntity[];
 
@@ -39,6 +42,12 @@ export class ThreadEntity {
 
   @VirtualColumn2('newMessageCount', parseInt)
   newMessageCount: number;
+
+  @VirtualColumn2('originalPoster', (t) => t)
+  originalPoster: string;
+
+  @VirtualColumn2'lastMessage'', (t) => t)
+  lastMessage: MessageEnt;ity;
 
   @BeforeInsert()
   generateId() {

@@ -30,10 +30,8 @@ declare module 'typeorm' {
   }
 }
 
-SelectQueryBuilder.prototype.getMany = async function () {
-  const { entities, raw } = await this.getRawAndEntities();
-
-  const items = entities.map((entity, index) => {
+function remapEntitiesWithVirtual(entities: any[], raw: any[]) {
+  return entities.map((entity, index) => {
     const metaInfo = Reflect.getMetadata(VIRTUAL_COLUMN_KEY, entity) ?? {};
     const metaInfoType = Reflect.getMetadata(VIRTUAL_COLUMN_TYPE, entity) ?? {};
 
@@ -41,26 +39,32 @@ SelectQueryBuilder.prototype.getMany = async function () {
 
     for (const [propertyKey, name] of Object.entries<string>(metaInfo)) {
       const transformer = metaInfoType[propertyKey];
-      entity[propertyKey] = transformer(item[name]);
+      const transformable = item[name] || entity[name];
+      entity[propertyKey] = transformer(transformable);
     }
 
     return entity;
   });
+}
 
+SelectQueryBuilder.prototype.getMany = async function () {
+  const { entities, raw } = await this.getRawAndEntities();
+
+  const items = remapEntitiesWithVirtual(entities, raw);
   return [...items];
+};
+
+SelectQueryBuilder.prototype.getManyAndCount = async function () {
+  const { entities, raw } = await this.getRawAndEntities();
+  const count = this.executeCountQuery(this.obtainQueryRunner());
+  const items = remapEntitiesWithVirtual(entities, raw);
+  return [[...items], count];
 };
 
 SelectQueryBuilder.prototype.getOne = async function () {
   const { entities, raw } = await this.getRawAndEntities();
-  const metaInfo = Reflect.getMetadata(VIRTUAL_COLUMN_KEY, entities[0]) ?? {};
 
-  const metaInfoType =
-    Reflect.getMetadata(VIRTUAL_COLUMN_TYPE, entities[0]) ?? {};
+  const items = remapEntitiesWithVirtual(entities, raw);
 
-  for (const [propertyKey, name] of Object.entries<string>(metaInfo)) {
-    const transformer = metaInfoType[propertyKey];
-    entities[0][propertyKey] = transformer(raw[0][name]);
-  }
-
-  return entities[0];
+  return items[0];
 };
