@@ -26,7 +26,7 @@ export class MessageEntity {
     type: 'timestamptz',
     name: 'created_at',
   })
-  createdAt: Date;
+  created_at: Date;
 
   @ManyToOne((type) => ThreadEntity, (thread) => thread.messages, {
     eager: true,

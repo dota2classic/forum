@@ -40,7 +40,7 @@ export class ForumService {
     msg.thread_id = thread.id;
     msg.content = content;
     msg.author = authorId;
-    msg.createdAt = new Date();
+    msg.created_at = new Date();
     msg.index = idx;
 
     msg = await this.messageEntityRepository.save(msg);
@@ -52,7 +52,7 @@ export class ForumService {
         thread.external_id,
         msg.id,
         msg.author,
-        msg.createdAt.toUTCString(),
+        msg.created_at.toUTCString(),
         msg.content,
         msg.index,
       ),
@@ -84,33 +84,10 @@ export class ForumService {
     externalId: string,
     title: string,
   ): Promise<ThreadEntity> {
-    const q = this.threadEntityRepository
-      .createQueryBuilder('te')
-      .leftJoin(MessageEntity, 'me', 'te.id = me.thread_id')
-      .leftJoin(MessageEntity, 'op', 'te.id = op.thread_id and op.index = 0')
-      .leftJoinAndMapOne(
-        'te.lastMessage',
-        MessageEntity,
-        'lm',
-        `lm.thread_id = te.id and ` +
-          `lm.index = (
-    SELECT ilm.index
-    FROM message_entity ilm
-    WHERE ilm.thread_id = te.id
-    ORDER BY index DESC
-    limit 1
-)`,
-      )
-      .addSelect('count(me)', 'messageCount')
-      .addSelect(
-        `sum((me.created_at <= NOW() - '24 hours'::interval)::int)`,
-        'newMessageCount',
-      )
-      .addSelect('op.author', 'originalPoster')
-      .where({ thread_type: threadType, external_id: externalId })
-      .groupBy(
-        'te.id, te.external_id, te.thread_type, te.title, op.author, op.id, lm.id, lm.author, lm.index, lm.content, lm.created_at, lm.thread_id',
-      );
+    const q = this.getThreadBaseQuery().where({
+      thread_type: threadType,
+      external_id: externalId,
+    });
 
     const t = await q.getOne();
 
@@ -130,7 +107,36 @@ export class ForumService {
     perPage: number,
     threadType?: ThreadType,
   ): Promise<[ThreadEntity[], number]> {
-    const q = this.threadEntityRepository
+    const q = this.getThreadBaseQuery()
+      .orderBy('lm.created_at', 'DESC')
+      .where(threadType ? { thread_type: threadType } : {})
+      .skip(perPage * page)
+      .take(perPage);
+
+    return q.getManyAndCount();
+  }
+
+  getThread(id: string): Promise<ThreadEntity> {
+    return this.getThreadBaseQuery()
+      .where({
+        id,
+      })
+      .getOneOrFail();
+  }
+
+  public async threadView(id: string) {
+    await this.threadEntityRepository
+      .createQueryBuilder()
+      .update(ThreadEntity)
+      .set({
+        views: () => 'views + 1',
+      })
+      .where({ id })
+      .execute();
+  }
+
+  private getThreadBaseQuery() {
+    return this.threadEntityRepository
       .createQueryBuilder('te')
       .leftJoin(MessageEntity, 'me', 'te.id = me.thread_id')
       .leftJoin(MessageEntity, 'op', 'te.id = op.thread_id and op.index = 0')
@@ -149,39 +155,12 @@ export class ForumService {
       )
       .addSelect('count(me)', 'messageCount')
       .addSelect(
-        `sum((me.created_at <= NOW() - '24 hours'::interval)::int)`,
+        `sum((me.created_at >= NOW() - '8 hours'::interval)::int)`,
         'newMessageCount',
       )
       .addSelect('op.author', 'originalPoster')
       .groupBy(
-        'te.id, te.external_id, te.thread_type, te.title, op.author, lm.id, lm.author, lm.index, lm.content, lm.created_at, lm.thread_id',
-      )
-      .where(threadType ? { thread_type: threadType } : {})
-      .skip(perPage * page)
-      .take(perPage);
-
-    // console.log(q.getQuery());
-    console.log(await q.getMany());
-
-    return q.getManyAndCount();
-  }
-
-  getThread(id: string): Promise<ThreadEntity> {
-    return this.threadEntityRepository.findOneOrFail({
-      where: {
-        id,
-      },
-    });
-  }
-
-  public async threadView(id: string) {
-    await this.threadEntityRepository
-      .createQueryBuilder()
-      .update(ThreadEntity)
-      .set({
-        views: () => 'views + 1',
-      })
-      .where({ id })
-      .execute();
+        'te.id, te.external_id, te.thread_type, te.title, op.author, op.id, lm.id, lm.author, lm.index, lm.content, lm.created_at, lm.thread_id',
+      );
   }
 }
