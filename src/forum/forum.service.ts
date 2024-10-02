@@ -110,6 +110,7 @@ export class ForumService {
     const q = this.getThreadBaseQuery()
       .orderBy('lm.created_at', 'DESC')
       .where(threadType ? { thread_type: threadType } : {})
+      .having('COUNT(me) > 0')
       .skip(perPage * page)
       .take(perPage);
 
