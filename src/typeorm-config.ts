@@ -24,6 +24,7 @@ export const prodDbConfig: TypeOrmModuleOptions = {
   entities: Entities,
   synchronize: true,
   maxQueryExecutionTime: 1000,
+  logging: true,
 
   ssl: false,
 };

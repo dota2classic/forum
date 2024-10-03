@@ -34,6 +34,9 @@ export class ThreadEntity {
   @Column({ default: 0 })
   views: number;
 
+  @Column({ default: false })
+  pinned: boolean;
+
   @OneToMany((type) => MessageEntity, (msg) => msg.thread, { eager: false })
   messages: MessageEntity[];
 
