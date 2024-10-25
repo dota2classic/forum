@@ -183,6 +183,8 @@ export class ForumService {
       new MessageUpdatedEvent(
         msg.thread_id,
         msg.id,
+        msg.author,
+        msg.created_at.toUTCString(),
         msg.content,
         msg.index,
         msg.deleted,
