@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { MessageEntity } from './model/message.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { ThreadEntity } from './model/thread.entity';
 import { EventBus } from '@nestjs/cqrs';
 import { MessageCreatedEvent } from '../gateway/events/message-created.event';
@@ -16,6 +16,7 @@ export class ForumService {
     private readonly messageEntityRepository: Repository<MessageEntity>,
     @InjectRepository(ThreadEntity)
     private readonly threadEntityRepository: Repository<ThreadEntity>,
+    private dataSource: DataSource,
     private readonly ebus: EventBus,
     @Inject('QueryCore') private readonly redisEventQueue: ClientProxy,
   ) {}
@@ -31,20 +32,22 @@ export class ForumService {
       },
     });
 
-    const idx = await this.messageEntityRepository.count({
-      where: {
-        thread_id: thread.id,
-      },
+    const msg = await this.dataSource.transaction(async () => {
+      const idx = await this.messageEntityRepository.count({
+        where: {
+          thread_id: thread.id,
+        },
+      });
+
+      let msg = new MessageEntity();
+      msg.thread_id = thread.id;
+      msg.content = content;
+      msg.author = authorId;
+      msg.created_at = new Date();
+      msg.index = idx;
+
+      return await this.messageEntityRepository.save(msg);
     });
-
-    let msg = new MessageEntity();
-    msg.thread_id = thread.id;
-    msg.content = content;
-    msg.author = authorId;
-    msg.created_at = new Date();
-    msg.index = idx;
-
-    msg = await this.messageEntityRepository.save(msg);
 
     this.redisEventQueue.emit(
       MessageCreatedEvent.name,
@@ -70,7 +73,8 @@ export class ForumService {
     let query = this.messageEntityRepository
       .createQueryBuilder('me')
       .innerJoinAndSelect('me.thread', 'thread')
-      .where('thread.id = :thread_id', { thread_id });
+      .where('thread.id = :thread_id', { thread_id })
+      .andWhere('me.deleted = false');
 
     if (after)
       query = query.andWhere('me.created_at >= :after', {
@@ -146,7 +150,7 @@ export class ForumService {
         'te.lastMessage',
         MessageEntity,
         'lm',
-        `lm.thread_id = te.id and lm.index = (
+        `lm.thread_id = te.id and lm.deleted = false and lm.index = (
     SELECT ilm.index
     FROM message_entity ilm
     WHERE ilm.thread_id = te.id
