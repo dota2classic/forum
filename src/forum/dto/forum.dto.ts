@@ -7,7 +7,6 @@ export class CreateMessageDTO {
   readonly content: string;
 }
 
-
 export class MessageDTO {
   threadId: string;
   id: string;
@@ -15,6 +14,7 @@ export class MessageDTO {
   author: string;
   createdAt: string;
   index: number;
+  deleted: boolean;
 }
 
 export class CreateThreadDTO {

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Logger,
   Param,
@@ -137,6 +138,11 @@ export class ForumController {
     return this.fs
       .postMessage(id, dto.content, dto.author)
       .then(this.mapper.mapMessage);
+  }
+
+  @Delete('message/:id')
+  async deleteMessage(@Param('id') id: string): Promise<MessageDTO> {
+    return this.fs.deleteMessage(id).then(this.mapper.mapMessage);
   }
 
   @Get('healthcheck')

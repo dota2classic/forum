@@ -28,6 +28,9 @@ export class MessageEntity {
   })
   created_at: Date;
 
+  @Column({ default: false })
+  deleted: boolean;
+
   @ManyToOne((type) => ThreadEntity, (thread) => thread.messages, {
     eager: true,
   })

@@ -11,6 +11,7 @@ export class ForumMapper {
     content: msg.content,
     author: msg.author,
     index: msg.index,
+    deleted: msg.deleted,
     createdAt: msg.created_at.toUTCString(),
   });
 

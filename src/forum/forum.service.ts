@@ -7,6 +7,7 @@ import { EventBus } from '@nestjs/cqrs';
 import { MessageCreatedEvent } from '../gateway/events/message-created.event';
 import { ClientProxy } from '@nestjs/microservices';
 import { ThreadType } from '../gateway/shared-types/thread-type';
+import { MessageUpdatedEvent } from '../gateway/events/message-updated.event';
 
 @Injectable()
 export class ForumService {
@@ -162,5 +163,32 @@ export class ForumService {
       .groupBy(
         'te.id, te.external_id, te.thread_type, te.title, op.author, op.id, lm.id, lm.author, lm.index, lm.content, lm.created_at, lm.thread_id',
       );
+  }
+
+  public async deleteMessage(id: string) {
+    const some: MessageEntity[] = (
+      await this.messageEntityRepository
+        .createQueryBuilder()
+        .update(MessageEntity)
+        .set({
+          deleted: true,
+        })
+        .returning('*')
+        .where({ id })
+        .execute()
+    ).raw;
+
+    const msg = some[0];
+    this.ebus.publish(
+      new MessageUpdatedEvent(
+        msg.thread_id,
+        msg.id,
+        msg.content,
+        msg.index,
+        msg.deleted,
+      ),
+    );
+
+    return msg;
   }
 }
