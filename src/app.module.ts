@@ -7,9 +7,12 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { REDIS_HOST, REDIS_PASSWORD, REDIS_PORT } from './env';
 import { ForumMapper } from './forum/forum.mapper';
+import { TerminusModule } from '@nestjs/terminus';
+import { HealthController } from './forum/health.controller';
 
 @Module({
   imports: [
+    TerminusModule,
     TypeOrmModule.forRoot(prodDbConfig),
     TypeOrmModule.forFeature(Entities),
     CqrsModule,
@@ -27,7 +30,7 @@ import { ForumMapper } from './forum/forum.mapper';
       },
     ]),
   ],
-  controllers: [ForumController],
+  controllers: [ForumController, HealthController],
   providers: [ForumService, ForumMapper],
 })
 export class AppModule {}
