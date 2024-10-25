@@ -139,6 +139,11 @@ export class ForumController {
       .then(this.mapper.mapMessage);
   }
 
+  @Get('healthcheck')
+  async healthcheck() {
+    return 'Yes im alive';
+  }
+
   private threadView(id: string) {
     this.fs
       .threadView(id)
