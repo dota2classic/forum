@@ -7,8 +7,10 @@ import {
 import { Controller, Get, Inject } from '@nestjs/common';
 import { ClientProxy, Transport } from '@nestjs/microservices';
 import { REDIS_HOST, REDIS_PASSWORD, REDIS_PORT } from '../env';
+import { ApiExcludeController } from '@nestjs/swagger';
 
 @Controller('health')
+@ApiExcludeController()
 export class HealthController {
   constructor(
     private health: HealthCheckService,
