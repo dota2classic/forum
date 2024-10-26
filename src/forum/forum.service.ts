@@ -41,7 +41,7 @@ export class ForumService {
 
       let msg = new MessageEntity();
       msg.thread_id = thread.id;
-      msg.content = content;
+      msg.content = content.trim();
       msg.author = authorId;
       msg.created_at = new Date();
       msg.index = idx;
@@ -150,10 +150,10 @@ export class ForumService {
         'te.lastMessage',
         MessageEntity,
         'lm',
-        `lm.thread_id = te.id and lm.index = (
+        `lm.thread_id = te.id and lm.deleted != false and lm.index = (
     SELECT ilm.index
     FROM message_entity ilm
-    WHERE ilm.thread_id = te.id
+    WHERE ilm.thread_id = te.id and ilm.deleted != false
     ORDER BY index DESC
     limit 1
 )`,

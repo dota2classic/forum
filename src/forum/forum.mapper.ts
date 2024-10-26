@@ -25,7 +25,8 @@ export class ForumMapper {
       views: existing.views,
       newMessageCount: existing.newMessageCount,
       originalPoster: existing.originalPoster,
-      lastMessage: this.mapMessage(existing.lastMessage),
+      lastMessage:
+        existing.lastMessage && this.mapMessage(existing.lastMessage),
     };
   };
 }

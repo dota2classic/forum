@@ -50,7 +50,7 @@ export class ThreadEntity {
   originalPoster: string;
 
   @VirtualColumn2('lastMessage', (t) => t)
-  lastMessage: MessageEntity;
+  lastMessage?: MessageEntity;
 
   @BeforeInsert()
   generateId() {

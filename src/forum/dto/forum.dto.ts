@@ -40,7 +40,7 @@ export class ThreadDTO {
   readonly newMessageCount: number;
   readonly originalPoster: string;
 
-  readonly lastMessage: MessageDTO;
+  readonly lastMessage?: MessageDTO;
 }
 
 export class ThreadPageDto extends Page<ThreadDTO> {
