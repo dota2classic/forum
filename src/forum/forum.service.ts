@@ -150,7 +150,7 @@ export class ForumService {
         'te.lastMessage',
         MessageEntity,
         'lm',
-        `lm.thread_id = te.id and lm.deleted = false and lm.index = (
+        `lm.thread_id = te.id and lm.index = (
     SELECT ilm.index
     FROM message_entity ilm
     WHERE ilm.thread_id = te.id
