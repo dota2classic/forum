@@ -22,9 +22,9 @@ export const prodDbConfig: TypeOrmModuleOptions = {
   username: DB_USERNAME(),
   password: DB_PASSWORD,
   entities: Entities,
+
   synchronize: true,
-  maxQueryExecutionTime: 1000,
-  // logging: true,
+  dropSchema: false,
 
   ssl: false,
 };
