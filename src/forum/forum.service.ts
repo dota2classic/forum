@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { MessageEntity } from './model/message.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
@@ -8,9 +8,12 @@ import { MessageCreatedEvent } from '../gateway/events/message-created.event';
 import { ClientProxy } from '@nestjs/microservices';
 import { ThreadType } from '../gateway/shared-types/thread-type';
 import { MessageUpdatedEvent } from '../gateway/events/message-updated.event';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class ForumService {
+  private logger = new Logger(ForumService.name);
+
   constructor(
     @InjectRepository(MessageEntity)
     private readonly messageEntityRepository: Repository<MessageEntity>,
@@ -20,6 +23,12 @@ export class ForumService {
     private readonly ebus: EventBus,
     @Inject('QueryCore') private readonly redisEventQueue: ClientProxy,
   ) {}
+
+  @Cron(CronExpression.EVERY_30_SECONDS)
+  public async test() {
+    const msgCount = this.messageEntityRepository.count();
+    this.logger.verbose(`Scheduled db check: message count is ${msgCount}`);
+  }
 
   async postMessage(
     threadId: string,

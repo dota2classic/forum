@@ -13,6 +13,7 @@ import { HealthController } from './forum/health.controller';
 @Module({
   imports: [
     TerminusModule,
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRoot(prodDbConfig),
     TypeOrmModule.forFeature(Entities),
     CqrsModule,

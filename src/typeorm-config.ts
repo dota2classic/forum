@@ -23,6 +23,8 @@ export const prodDbConfig: TypeOrmModuleOptions = {
   password: DB_PASSWORD,
   entities: Entities,
 
+  connectTimeoutMS: 5000,
+
   synchronize: true,
   dropSchema: false,
 
