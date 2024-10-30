@@ -7,6 +7,11 @@ export class CreateMessageDTO {
   readonly content: string;
 }
 
+export enum SortOrder {
+  ASC = 'ASC',
+  DESC = 'DESC',
+}
+
 export class MessageDTO {
   threadId: string;
   id: string;

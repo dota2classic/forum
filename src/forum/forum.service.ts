@@ -9,6 +9,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { ThreadType } from '../gateway/shared-types/thread-type';
 import { MessageUpdatedEvent } from '../gateway/events/message-updated.event';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { SortOrder } from './dto/forum.dto';
 
 @Injectable()
 export class ForumService {
@@ -78,12 +79,16 @@ export class ForumService {
     thread_id: string,
     after: number | undefined,
     limit: number,
+    order: SortOrder,
   ): Promise<MessageEntity[]> {
     let query = this.messageEntityRepository
       .createQueryBuilder('me')
       .innerJoinAndSelect('me.thread', 'thread')
       .where('thread.id = :thread_id', { thread_id })
-      .andWhere('me.deleted = false');
+      .andWhere('me.deleted = false')
+      .orderBy('me.created_at', order);
+
+    console.log(query.getQuery());
 
     if (after)
       query = query.andWhere('me.created_at >= :after', {

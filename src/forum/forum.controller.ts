@@ -16,6 +16,7 @@ import {
   CreateMessageDTO,
   CreateThreadDTO,
   MessageDTO,
+  SortOrder,
   ThreadDTO,
   ThreadPageDto,
 } from './dto/forum.dto';
@@ -118,15 +119,22 @@ export class ForumController {
     name: 'limit',
     required: false,
   })
+  @ApiQuery({
+    name: 'order',
+    enum: SortOrder,
+    enumName: 'SortOrder',
+    required: false,
+  })
   @Get('thread/:id/messages')
   async messages(
     @Param('id') id: string,
     @Query('after', NullableIntPipe) after?: number,
     @Query('limit', NullableIntPipe) limit: number = 10,
+    @Query('order') order: SortOrder = SortOrder.ASC,
   ): Promise<MessageDTO[]> {
     this.threadView(id);
     return this.fs
-      .getMessages(id, after, limit)
+      .getMessages(id, after, limit, order)
       .then((it) => it.map(this.mapper.mapMessage));
   }
 
