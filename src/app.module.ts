@@ -9,6 +9,7 @@ import { REDIS_HOST, REDIS_PASSWORD, REDIS_PORT } from './env';
 import { ForumMapper } from './forum/forum.mapper';
 import { TerminusModule } from '@nestjs/terminus';
 import { HealthController } from './forum/health.controller';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
