@@ -26,7 +26,7 @@ export class ForumService {
 
   @Cron(CronExpression.EVERY_30_SECONDS)
   public async test() {
-    const msgCount = this.messageEntityRepository.count();
+    const msgCount = await this.messageEntityRepository.count();
     this.logger.verbose(`Scheduled db check: message count is ${msgCount}`);
   }
 
