@@ -9,7 +9,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { ThreadType } from '../gateway/shared-types/thread-type';
 import { MessageUpdatedEvent } from '../gateway/events/message-updated.event';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { SortOrder } from './dto/forum.dto';
+import { SortOrder, UpdateThreadDTO } from './dto/forum.dto';
 
 @Injectable()
 export class ForumService {
@@ -42,8 +42,8 @@ export class ForumService {
       },
     });
 
-    const msg = await this.dataSource.transaction(async () => {
-      const idx = await this.messageEntityRepository.count({
+    const msg = await this.dataSource.transaction(async (transacManager) => {
+      const idx = await transacManager.count(MessageEntity, {
         where: {
           thread_id: thread.id,
         },
@@ -56,7 +56,7 @@ export class ForumService {
       msg.created_at = new Date();
       msg.index = idx;
 
-      return await this.messageEntityRepository.save(msg);
+      return transacManager.save(msg);
     });
 
     this.redisEventQueue.emit(
@@ -87,8 +87,6 @@ export class ForumService {
       .where('thread.id = :thread_id', { thread_id })
       .andWhere('me.deleted = false')
       .orderBy('me.created_at', order);
-
-    console.log(query.getQuery());
 
     if (after)
       query = query.andWhere('me.created_at >= :after', {
@@ -127,7 +125,8 @@ export class ForumService {
     threadType?: ThreadType,
   ): Promise<[ThreadEntity[], number]> {
     const q = this.getThreadBaseQuery()
-      .orderBy('lm.created_at', 'DESC')
+      .orderBy('te.pinned', 'DESC')
+      .addOrderBy('lm.created_at', 'DESC')
       .where(threadType ? { thread_type: threadType } : {})
       .having('COUNT(me) > 0')
       .skip(perPage * page)
@@ -210,5 +209,18 @@ export class ForumService {
     );
 
     return msg;
+  }
+
+  public async updateThread(id: string, dto: UpdateThreadDTO) {
+    const result = await this.threadEntityRepository
+      .createQueryBuilder('te')
+      .update()
+      .set({
+        pinned: dto.pinned,
+      })
+      .where({ id })
+      .execute();
+
+    return this.getThreadBaseQuery().where({ id }).getOne();
   }
 }

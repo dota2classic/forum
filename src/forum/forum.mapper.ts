@@ -23,6 +23,7 @@ export class ForumMapper {
       title: existing.title,
       messageCount: existing.messageCount,
       views: existing.views,
+      pinned: existing.pinned,
       newMessageCount: existing.newMessageCount,
       originalPoster: existing.originalPoster,
       lastMessage:

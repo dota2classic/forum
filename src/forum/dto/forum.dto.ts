@@ -40,6 +40,7 @@ export class ThreadDTO {
   readonly title: string;
 
   readonly views: number;
+  readonly pinned: boolean;
 
   readonly messageCount: number;
   readonly newMessageCount: number;
@@ -53,4 +54,8 @@ export class ThreadPageDto extends Page<ThreadDTO> {
   perPage: number;
   page: number;
   pages: number;
+}
+
+export class UpdateThreadDTO {
+  pinned: boolean;
 }

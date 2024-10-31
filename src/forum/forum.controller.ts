@@ -5,6 +5,7 @@ import {
   Get,
   Logger,
   Param,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -19,6 +20,7 @@ import {
   SortOrder,
   ThreadDTO,
   ThreadPageDto,
+  UpdateThreadDTO,
 } from './dto/forum.dto';
 import { ForumService } from './forum.service';
 import { ForumMapper } from './forum.mapper';
@@ -151,6 +153,14 @@ export class ForumController {
   @Delete('message/:id')
   async deleteMessage(@Param('id') id: string): Promise<MessageDTO> {
     return this.fs.deleteMessage(id).then(this.mapper.mapMessage);
+  }
+
+  @Patch('thread/:id')
+  async updateThread(
+    @Param('id') id: string,
+    @Body() dto: UpdateThreadDTO,
+  ): Promise<ThreadDTO> {
+    return this.fs.updateThread(id, dto).then(this.mapper.mapThread);
   }
 
   @Get('healthcheck')
