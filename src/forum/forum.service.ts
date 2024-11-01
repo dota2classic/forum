@@ -96,6 +96,18 @@ export class ForumService {
     return query.take(limit).getMany();
   }
 
+  async getMessagesPage(thread_id: string, page: number, perPage: number) {
+    return this.messageEntityRepository
+      .createQueryBuilder('me')
+      .innerJoinAndSelect('me.thread', 'thread')
+      .where('thread.id = :thread_id', { thread_id })
+      .andWhere('me.deleted = false')
+      .orderBy('me.created_at', 'ASC')
+      .limit(perPage)
+      .offset(page * perPage)
+      .getManyAndCount();
+  }
+
   async getOrCreateThread(
     threadType: ThreadType,
     externalId: string,

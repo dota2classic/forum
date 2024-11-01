@@ -17,6 +17,7 @@ import {
   CreateMessageDTO,
   CreateThreadDTO,
   MessageDTO,
+  MessagePageDTO,
   SortOrder,
   ThreadDTO,
   ThreadPageDto,
@@ -27,6 +28,7 @@ import { ForumMapper } from './forum.mapper';
 import { NullableIntPipe } from '../util/pipes';
 import { ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ThreadType } from '../gateway/shared-types/thread-type';
+import { makePage } from '../gateway/util/make-page';
 
 @Controller('forum')
 @ApiTags('forum')
@@ -138,6 +140,30 @@ export class ForumController {
     return this.fs
       .getMessages(id, after, limit, order)
       .then((it) => it.map(this.mapper.mapMessage));
+  }
+
+  @ApiParam({
+    name: 'id',
+    required: true,
+  })
+  @ApiQuery({
+    name: 'page',
+    required: true,
+  })
+  @ApiQuery({
+    name: 'perPage',
+    required: false,
+  })
+  @Get('thread/:id/page')
+  async messagesPage(
+    @Param('id') id: string,
+    @Query('page', NullableIntPipe) page: number,
+    @Query('perPage', NullableIntPipe) perPage: number = 15,
+  ): Promise<MessagePageDTO> {
+    this.threadView(id);
+    const [msgs, cnt] = await this.fs.getMessagesPage(id, page, perPage);
+
+    return makePage(msgs, cnt, page, perPage, this.mapper.mapMessage);
   }
 
   @Post('thread/:id/message')

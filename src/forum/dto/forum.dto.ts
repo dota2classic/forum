@@ -22,6 +22,13 @@ export class MessageDTO {
   deleted: boolean;
 }
 
+export class MessagePageDTO extends Page<MessageDTO> {
+  data: MessageDTO[];
+  perPage: number;
+  page: number;
+  pages: number;
+}
+
 export class CreateThreadDTO {
   readonly externalId: string;
   @ApiProperty({ enum: ThreadType, enumName: 'ThreadType' })
