@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { MessageEntity } from './model/message.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { Connection, DataSource, Repository } from 'typeorm';
 import { ThreadEntity } from './model/thread.entity';
 import { EventBus } from '@nestjs/cqrs';
 import { MessageCreatedEvent } from '../gateway/events/message-created.event';
@@ -21,6 +21,7 @@ export class ForumService {
     @InjectRepository(ThreadEntity)
     private readonly threadEntityRepository: Repository<ThreadEntity>,
     private dataSource: DataSource,
+    private connection: Connection,
     private readonly ebus: EventBus,
     @Inject('QueryCore') private readonly redisEventQueue: ClientProxy,
   ) {}

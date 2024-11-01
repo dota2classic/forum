@@ -47,24 +47,14 @@ function remapEntitiesWithVirtual(entities: any[], raw: any[]) {
   });
 }
 
-SelectQueryBuilder.prototype.getMany = async function () {
-  const { entities, raw } = await this.getRawAndEntities();
+// @ts-ignore
+const originExecute = SelectQueryBuilder.prototype.executeEntitiesAndRawResults;
+// @ts-ignore
+SelectQueryBuilder.prototype.executeEntitiesAndRawResults = async function (
+  queryRunner,
+) {
+  const { entities, raw } = await originExecute.call(this, queryRunner);
 
-  const items = remapEntitiesWithVirtual(entities, raw);
-  return [...items];
-};
-
-SelectQueryBuilder.prototype.getManyAndCount = async function () {
-  const { entities, raw } = await this.getRawAndEntities();
-  const count = await this.executeCountQuery(this.obtainQueryRunner());
-  const items = remapEntitiesWithVirtual(entities, raw);
-  return [[...items], count];
-};
-
-SelectQueryBuilder.prototype.getOne = async function () {
-  const { entities, raw } = await this.getRawAndEntities();
-
-  const items = remapEntitiesWithVirtual(entities, raw);
-
-  return items[0];
+  const extendedEntities = remapEntitiesWithVirtual(entities, raw);
+  return { entities: extendedEntities, raw };
 };

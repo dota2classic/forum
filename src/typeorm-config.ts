@@ -23,7 +23,7 @@ export const prodDbConfig: TypeOrmModuleOptions = {
   password: DB_PASSWORD,
   entities: Entities,
 
-  connectTimeoutMS: 5000,
+  connectTimeoutMS: 500,
 
   logging: ['warn', 'error', 'info'],
   extra: { max: 20 },
@@ -31,5 +31,9 @@ export const prodDbConfig: TypeOrmModuleOptions = {
   synchronize: true,
   dropSchema: false,
 
+  poolErrorHandler(err) {
+    console.log('AMOGUS');
+    console.log(err);
+  },
   ssl: false,
 };
