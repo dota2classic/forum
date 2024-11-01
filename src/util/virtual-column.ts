@@ -56,7 +56,7 @@ SelectQueryBuilder.prototype.getMany = async function () {
 
 SelectQueryBuilder.prototype.getManyAndCount = async function () {
   const { entities, raw } = await this.getRawAndEntities();
-  const count = this.executeCountQuery(this.obtainQueryRunner());
+  const count = await this.executeCountQuery(this.obtainQueryRunner());
   const items = remapEntitiesWithVirtual(entities, raw);
   return [[...items], count];
 };

@@ -25,6 +25,9 @@ export const prodDbConfig: TypeOrmModuleOptions = {
 
   connectTimeoutMS: 5000,
 
+  logging: ['warn', 'error', 'info'],
+  extra: { max: 20 },
+
   synchronize: true,
   dropSchema: false,
 

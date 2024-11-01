@@ -103,8 +103,8 @@ export class ForumService {
       .where('thread.id = :thread_id', { thread_id })
       .andWhere('me.deleted = false')
       .orderBy('me.created_at', 'ASC')
-      .limit(perPage)
-      .offset(page * perPage)
+      .take(perPage)
+      .skip(page * perPage)
       .getManyAndCount();
   }
 

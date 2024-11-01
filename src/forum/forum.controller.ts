@@ -64,18 +64,13 @@ export class ForumController {
     @Query('perPage', NullableIntPipe) perPage: number = 25,
     @Query('threadType') threadType?: ThreadType,
   ): Promise<ThreadPageDto> {
-    const [threads, pages] = await this.fs.getThreadPage(
+    const [threads, cnt] = await this.fs.getThreadPage(
       page,
       perPage,
       threadType,
     );
 
-    return {
-      data: threads.map(this.mapper.mapThread),
-      page,
-      perPage,
-      pages,
-    };
+    return makePage(threads, cnt, page, perPage, this.mapper.mapThread);
   }
 
   @Get('thread/:id')
@@ -162,7 +157,6 @@ export class ForumController {
   ): Promise<MessagePageDTO> {
     this.threadView(id);
     const [msgs, cnt] = await this.fs.getMessagesPage(id, page, perPage);
-
     return makePage(msgs, cnt, page, perPage, this.mapper.mapMessage);
   }
 
