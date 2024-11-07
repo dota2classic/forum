@@ -24,6 +24,7 @@ export class ForumMapper {
       messageCount: existing.messageCount,
       views: existing.views,
       pinned: existing.pinned,
+      adminOnly: existing.admin_only,
       newMessageCount: existing.newMessageCount,
       originalPoster: existing.originalPoster,
       lastMessage:

@@ -37,6 +37,9 @@ export class ThreadEntity {
   @Column({ default: false })
   pinned: boolean;
 
+  @Column({ default: false })
+  admin_only: boolean;
+
   @OneToMany((type) => MessageEntity, (msg) => msg.thread, { eager: false })
   messages: MessageEntity[];
 
