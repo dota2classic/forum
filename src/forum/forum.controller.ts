@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MessageEntity } from './model/message.entity';
@@ -60,6 +61,7 @@ export class ForumController {
   })
   @Get('threads')
   async threads(
+    @Req() req: any,
     @Query('page', NullableIntPipe) page: number,
     @Query('perPage', NullableIntPipe) perPage: number = 25,
     @Query('threadType') threadType?: ThreadType,
