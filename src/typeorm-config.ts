@@ -2,8 +2,9 @@ import { DB_HOST, DB_PASSWORD, DB_USERNAME } from './env';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm/dist/interfaces/typeorm-options.interface';
 import { ThreadEntity } from './forum/model/thread.entity';
 import { MessageEntity } from './forum/model/message.entity';
+import { ForumUserEntity } from './forum/model/forum-user.entity';
 
-export const Entities = [ThreadEntity, MessageEntity];
+export const Entities = [ThreadEntity, MessageEntity, ForumUserEntity];
 
 export const testDbConfig: TypeOrmModuleOptions = {
   type: 'sqlite',

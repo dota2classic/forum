@@ -1,9 +1,18 @@
 import { ThreadType } from '../../gateway/shared-types/thread-type';
 import { ApiProperty } from '@nestjs/swagger';
 import { Page } from '../../gateway/shared-types/page';
+import { Role } from '../../gateway/shared-types/roles';
+
+export interface JwtPayload {
+  sub: string;
+  roles: Role[];
+  name: string | undefined;
+  avatar: string | undefined;
+  version?: '1';
+}
 
 export class CreateMessageDTO {
-  readonly author: string;
+  readonly author: JwtPayload;
   readonly content: string;
 }
 
@@ -35,7 +44,7 @@ export class CreateThreadDTO {
   readonly threadType: ThreadType;
   readonly title: string;
 
-  readonly opMessage?: CreateMessageDTO;
+  readonly op?: string;
 }
 
 export class ThreadDTO {
@@ -66,4 +75,8 @@ export class ThreadPageDto extends Page<ThreadDTO> {
 
 export class UpdateThreadDTO {
   pinned: boolean;
+}
+
+export class UpdateUserDTO {
+  muteUntil?: string;
 }

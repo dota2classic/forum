@@ -1,4 +1,11 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { MessageEntity } from './model/message.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Connection, DataSource, Repository } from 'typeorm';
@@ -9,7 +16,11 @@ import { ClientProxy } from '@nestjs/microservices';
 import { ThreadType } from '../gateway/shared-types/thread-type';
 import { MessageUpdatedEvent } from '../gateway/events/message-updated.event';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { SortOrder, UpdateThreadDTO } from './dto/forum.dto';
+import { JwtPayload, SortOrder, UpdateThreadDTO } from './dto/forum.dto';
+import { ForumUserEntity } from './model/forum-user.entity';
+import { didExpire } from '../gateway/util/expired';
+import { UserMutedException } from './exception/UserMutedException';
+import { Role } from '../gateway/shared-types/roles';
 
 @Injectable()
 export class ForumService {
@@ -20,6 +31,8 @@ export class ForumService {
     private readonly messageEntityRepository: Repository<MessageEntity>,
     @InjectRepository(ThreadEntity)
     private readonly threadEntityRepository: Repository<ThreadEntity>,
+    @InjectRepository(ForumUserEntity)
+    private readonly forumUserEntityRepository: Repository<ForumUserEntity>,
     private dataSource: DataSource,
     private connection: Connection,
     private readonly ebus: EventBus,
@@ -35,13 +48,18 @@ export class ForumService {
   async postMessage(
     threadId: string,
     content: string,
-    authorId: string,
+    author: JwtPayload,
   ): Promise<MessageEntity> {
-    let thread = await this.threadEntityRepository.findOneOrFail({
+    await this.checkUserForWrite(author.sub);
+
+    let thread: ThreadEntity = await this.threadEntityRepository.findOneOrFail({
       where: {
         id: threadId,
       },
     });
+
+    if (thread.admin_only && !author.roles.includes(Role.ADMIN))
+      throw new ForbiddenException();
 
     const msg = await this.dataSource.transaction(async (transacManager) => {
       const idx = await transacManager.count(MessageEntity, {
@@ -53,7 +71,7 @@ export class ForumService {
       let msg = new MessageEntity();
       msg.thread_id = thread.id;
       msg.content = content.trim();
-      msg.author = authorId;
+      msg.author = author.sub;
       msg.created_at = new Date();
       msg.index = idx;
 
@@ -156,6 +174,7 @@ export class ForumService {
       .getOneOrFail();
   }
 
+  // Probably very bad cause constant locking. Need to implement via stacking queue or something.
   public async threadView(id: string) {
     await this.threadEntityRepository
       .createQueryBuilder()
@@ -235,5 +254,28 @@ export class ForumService {
       .execute();
 
     return this.getThreadBaseQuery().where({ id }).getOne();
+  }
+
+  public async updateUser(steamId: string, muteUntil: string | undefined) {
+    return this.forumUserEntityRepository.upsert(
+      {
+        muted_until: muteUntil ? new Date(muteUntil) : undefined,
+        steam_id: steamId,
+      },
+      ['steam_id'],
+    );
+  }
+
+  public async checkUserForWrite(steamId: string | undefined) {
+    if (!steamId) throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
+    const author = await this.forumUserEntityRepository.findOne({
+      where: { steam_id: steamId },
+    });
+    if (!author) return;
+
+    const muteExpired =
+      author.muted_until === undefined || didExpire(author.muted_until);
+
+    if (!muteExpired) throw new UserMutedException(author.muted_until);
   }
 }

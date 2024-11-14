@@ -26,7 +26,7 @@ import {
 import { ForumService } from './forum.service';
 import { ForumMapper } from './forum.mapper';
 import { NullableIntPipe } from '../util/pipes';
-import { ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ThreadType } from '../gateway/shared-types/thread-type';
 import { makePage } from '../gateway/util/make-page';
 
@@ -79,31 +79,20 @@ export class ForumController {
     return this.fs.getThread(id).then(this.mapper.mapThread);
   }
 
+  @ApiBearerAuth()
   @Post('thread')
   async getThreadForKey(
     @Body() threadDto: CreateThreadDTO,
   ): Promise<ThreadDTO> {
+    await this.fs.checkUserForWrite(threadDto.op);
+
     const thread = await this.fs.getOrCreateThread(
       threadDto.threadType,
       threadDto.externalId,
       threadDto.title,
     );
-    if (threadDto.opMessage) {
-      await this.fs.postMessage(
-        thread.id,
-        threadDto.opMessage.content,
-        threadDto.opMessage.author,
-      );
-    }
     this.threadView(thread.id);
-
-    return this.mapper.mapThread(
-      await this.fs.getOrCreateThread(
-        threadDto.threadType,
-        threadDto.externalId,
-        threadDto.title,
-      ),
-    );
+    return this.mapper.mapThread(thread);
   }
 
   @ApiParam({
