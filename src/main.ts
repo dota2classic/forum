@@ -1,4 +1,4 @@
-// import { otelSDK } from './tracer';
+import { otelSDK } from './tracer';
 
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
@@ -7,7 +7,7 @@ import { Transport } from '@nestjs/microservices';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
-  // await otelSDK.start()
+  await otelSDK.start();
   const app = await NestFactory.create(AppModule);
   app.connectMicroservice({
     transport: Transport.REDIS,
