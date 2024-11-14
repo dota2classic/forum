@@ -4,11 +4,8 @@ import { Page } from '../../gateway/shared-types/page';
 import { Role } from '../../gateway/shared-types/roles';
 
 export interface JwtPayload {
-  sub: string;
+  steam_id: string;
   roles: Role[];
-  name: string | undefined;
-  avatar: string | undefined;
-  version?: '1';
 }
 
 export class CreateMessageDTO {

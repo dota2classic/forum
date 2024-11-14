@@ -50,7 +50,7 @@ export class ForumService {
     content: string,
     author: JwtPayload,
   ): Promise<MessageEntity> {
-    await this.checkUserForWrite(author.sub);
+    await this.checkUserForWrite(author.steam_id);
 
     let thread: ThreadEntity = await this.threadEntityRepository.findOneOrFail({
       where: {
@@ -71,7 +71,7 @@ export class ForumService {
       let msg = new MessageEntity();
       msg.thread_id = thread.id;
       msg.content = content.trim();
-      msg.author = author.sub;
+      msg.author = author.steam_id;
       msg.created_at = new Date();
       msg.index = idx;
 
@@ -273,7 +273,6 @@ export class ForumService {
     });
     if (!author) return;
 
-    console.log(author.muted_until, new Date());
     const muteExpired =
       author.muted_until === undefined || didExpire(author.muted_until);
 
