@@ -176,7 +176,6 @@ export class ForumService {
 
   // Probably very bad cause constant locking. Need to implement via stacking queue or something.
   public async threadView(id: string) {
-    await this.checkUserForWrite('116514945');
     await this.threadEntityRepository
       .createQueryBuilder()
       .update(ThreadEntity)
