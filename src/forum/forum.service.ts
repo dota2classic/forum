@@ -267,8 +267,6 @@ export class ForumService {
   }
 
   public async checkUserForWrite(steamId: string | undefined) {
-    return;
-
     if (!steamId) throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
     const author = await this.forumUserEntityRepository.findOne({
       where: { steam_id: steamId },
