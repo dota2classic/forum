@@ -23,6 +23,7 @@ import {
   ThreadDTO,
   ThreadPageDto,
   UpdateThreadDTO,
+  UpdateUserDTO,
 } from './dto/forum.dto';
 import { ForumService } from './forum.service';
 import { ForumMapper } from './forum.mapper';
@@ -177,6 +178,14 @@ export class ForumController {
   @Get('healthcheck')
   async healthcheck() {
     return 'Yes im alive';
+  }
+
+  @Post('/user/:id')
+  public async updateUser(
+    @Param('id') steam_id: string,
+    @Body() dto: UpdateUserDTO,
+  ) {
+    await this.fs.updateUser(steam_id, dto.muteUntil);
   }
 
   private threadView(id: string) {
