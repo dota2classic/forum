@@ -1,11 +1,4 @@
-import {
-  ForbiddenException,
-  HttpException,
-  HttpStatus,
-  Inject,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, Logger } from '@nestjs/common';
 import { MessageEntity } from './model/message.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Connection, DataSource, Repository } from 'typeorm';
@@ -267,7 +260,8 @@ export class ForumService {
   }
 
   public async checkUserForWrite(steamId: string | undefined) {
-    if (!steamId) throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
+    if (!steamId) return;
+
     const author = await this.forumUserEntityRepository.findOne({
       where: { steam_id: steamId },
     });

@@ -7,6 +7,6 @@ export class ForumUserEntity {
   })
   steam_id: string;
 
-  @Column({ type: 'timestamp with time zone' })
+  @Column({ type: 'timestamptz' })
   muted_until: Date;
 }

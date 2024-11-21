@@ -58,7 +58,7 @@ export class ThreadDTO {
 
   readonly messageCount: number;
   readonly newMessageCount: number;
-  readonly originalPoster: string;
+  readonly originalPoster?: string;
 
   readonly lastMessage?: MessageDTO;
 }

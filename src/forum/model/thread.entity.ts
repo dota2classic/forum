@@ -50,7 +50,7 @@ export class ThreadEntity {
   newMessageCount: number;
 
   @VirtualColumn2('originalPoster', (t) => t)
-  originalPoster: string;
+  originalPoster?: string;
 
   @VirtualColumn2('lastMessage', (t) => t)
   lastMessage?: MessageEntity;
