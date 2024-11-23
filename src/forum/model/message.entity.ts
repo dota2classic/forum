@@ -1,6 +1,7 @@
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -41,5 +42,6 @@ export class MessageEntity {
   thread!: ThreadEntity;
 
   @Column({ name: 'thread_id' })
+  @Index()
   thread_id: string;
 }
