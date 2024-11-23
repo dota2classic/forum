@@ -7,9 +7,10 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ThreadEntity } from './thread.entity';
+import { Message } from './message';
 
 @Entity('message_entity')
-export class MessageEntity {
+export class MessageEntity implements Message {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

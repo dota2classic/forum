@@ -3,8 +3,14 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm/dist/interfaces/typeorm-op
 import { ThreadEntity } from './forum/model/thread.entity';
 import { MessageEntity } from './forum/model/message.entity';
 import { ForumUserEntity } from './forum/model/forum-user.entity';
+import { LastMessageView } from './forum/model/last-message.view';
 
-export const Entities = [ThreadEntity, MessageEntity, ForumUserEntity];
+export const Entities = [
+  ThreadEntity,
+  MessageEntity,
+  ForumUserEntity,
+  LastMessageView,
+];
 
 export const testDbConfig: TypeOrmModuleOptions = {
   type: 'sqlite',
@@ -26,7 +32,9 @@ export const prodDbConfig: TypeOrmModuleOptions = {
 
   connectTimeoutMS: 500,
 
+  // logging: ['warn', 'error', 'info'],
   logging: ['warn', 'error', 'info'],
+  maxQueryExecutionTime: 1000,
   extra: { max: 20 },
 
   synchronize: true,
