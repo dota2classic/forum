@@ -34,8 +34,8 @@ export class ForumService {
 
   @Cron(CronExpression.EVERY_30_SECONDS)
   public async test() {
-    const msgCount = await this.messageEntityRepository.count();
-    this.logger.verbose(`Scheduled db check: message count is ${msgCount}`);
+    // const msgCount = await this.messageEntityRepository.count();
+    // this.logger.verbose(`Scheduled db check: message count is ${msgCount}`);
   }
 
   async postMessage(
@@ -159,6 +159,22 @@ export class ForumService {
     return q.getManyAndCount();
   }
 
+  public async getThreadPage2(
+    page: number,
+    perPage: number,
+    threadType?: ThreadType,
+  ): Promise<[ThreadEntity[], number]> {
+    const q = this.getThreadBaseQuery()
+      .orderBy('te.pinned', 'DESC')
+      .addOrderBy('lm.created_at', 'DESC')
+      .where(threadType ? { thread_type: threadType } : {})
+      .having('COUNT(me) > 0')
+      .skip(perPage * page)
+      .take(perPage);
+
+    return q.getManyAndCount();
+  }
+
   getThread(id: string): Promise<ThreadEntity> {
     return this.getThreadBaseQuery()
       .where({
@@ -186,15 +202,9 @@ export class ForumService {
       .leftJoin(MessageEntity, 'op', 'te.id = op.thread_id and op.index = 0')
       .leftJoinAndMapOne(
         'te.lastMessage',
-        MessageEntity,
+        'last_message_view',
         'lm',
-        `lm.thread_id = te.id and lm.deleted = false and lm.index = (
-    SELECT ilm.index
-    FROM message_entity ilm
-    WHERE ilm.thread_id = te.id and ilm.deleted = false
-    ORDER BY index DESC
-    limit 1
-)`,
+        `lm.thread_id = te.id and lm.deleted = false`,
       )
       .addSelect('count(me)', 'messageCount')
       .addSelect(
@@ -203,7 +213,7 @@ export class ForumService {
       )
       .addSelect('op.author', 'originalPoster')
       .groupBy(
-        'te.id, te.external_id, te.thread_type, te.title, op.author, op.id, lm.id, lm.author, lm.index, lm.content, lm.created_at, lm.thread_id',
+        'te.id, te.external_id, te.thread_type, te.title, op.author, op.id, lm.id, lm.author, lm.index, lm.deleted, lm.content, lm.created_at, lm.thread_id',
       );
   }
 
