@@ -159,24 +159,8 @@ export class ForumService {
     return q.getManyAndCount();
   }
 
-  public async getThreadPage2(
-    page: number,
-    perPage: number,
-    threadType?: ThreadType,
-  ): Promise<[ThreadEntity[], number]> {
-    const q = this.getThreadBaseQuery()
-      .orderBy('te.pinned', 'DESC')
-      .addOrderBy('lm.created_at', 'DESC')
-      .where(threadType ? { thread_type: threadType } : {})
-      .having('COUNT(me) > 0')
-      .skip(perPage * page)
-      .take(perPage);
-
-    return q.getManyAndCount();
-  }
-
   getThread(id: string): Promise<ThreadEntity> {
-    return this.getThreadBaseQuery()
+    return this.getThreadBaseQuery(false)
       .where({
         id,
       })
@@ -195,17 +179,11 @@ export class ForumService {
       .execute();
   }
 
-  private getThreadBaseQuery() {
-    return this.threadEntityRepository
+  private getThreadBaseQuery(withLastMessage: boolean = true) {
+    const baseQuery = this.threadEntityRepository
       .createQueryBuilder('te')
       .leftJoin(MessageEntity, 'me', 'te.id = me.thread_id')
       .leftJoin(MessageEntity, 'op', 'te.id = op.thread_id and op.index = 0')
-      .leftJoinAndMapOne(
-        'te.lastMessage',
-        'last_message_view',
-        'lm',
-        `lm.thread_id = te.id and lm.deleted = false`,
-      )
       .addSelect('count(me)', 'messageCount')
       .addSelect(
         `sum((me.created_at >= NOW() - '8 hours'::interval)::int)`,
@@ -213,8 +191,22 @@ export class ForumService {
       )
       .addSelect('op.author', 'originalPoster')
       .groupBy(
-        'te.id, te.external_id, te.thread_type, te.title, op.author, op.id, lm.id, lm.author, lm.index, lm.deleted, lm.content, lm.created_at, lm.thread_id',
+        'te.id, te.external_id, te.thread_type, te.title, op.author, op.id',
       );
+
+    if (withLastMessage)
+      return baseQuery
+        .leftJoinAndMapOne(
+          'te.lastMessage',
+          'last_message_view',
+          'lm',
+          `lm.thread_id = te.id and lm.deleted = false`,
+        )
+        .addGroupBy(
+          'lm.id, lm.author, lm.index, lm.deleted, lm.content, lm.created_at, lm.thread_id',
+        );
+
+    return baseQuery;
   }
 
   public async deleteMessage(id: string) {
