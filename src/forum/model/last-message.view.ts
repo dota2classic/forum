@@ -3,14 +3,17 @@ import { Message } from './message';
 
 @ViewEntity({
   name: 'last_message_view',
-  expression: `
-  select mc.*
-from message_entity mc
-         left join message_entity next_message
-                   on mc.thread_id = next_message.thread_id and
-                      next_message.created_at > mc.created_at and next_message.deleted = false
-where next_message.thread_id is null and mc.deleted = false
-                      `,
+  expression: `with latest as (select max(me.index) as mindex, me.thread_id from message_entity me where me.deleted = false group by me.thread_id)
+select me.id,
+       me.author,
+       me.index,
+       me.content,
+       me.created_at,
+       me.thread_id,
+       me.deleted
+from latest
+         inner join message_entity me
+                    on me.index = latest.mindex and me.thread_id = latest.thread_id`,
 })
 export class LastMessageView implements Message {
   @ViewColumn()
