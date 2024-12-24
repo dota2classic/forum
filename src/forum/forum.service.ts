@@ -199,7 +199,7 @@ export class ForumService {
           `lm.thread_id = te.id and lm.is_last = true`,
         )
         .addGroupBy(
-          'lm.id, lm.author, lm.deleted, lm.content, lm.created_at, lm.thread_id',
+          'lm.id, lm.author, lm.deleted, lm.content, lm.created_at, lm.thread_id, lm.is_last',
         );
 
     return baseQuery;
