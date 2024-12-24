@@ -158,7 +158,7 @@ export class ForumController {
     @Body() dto: CreateMessageDTO,
   ): Promise<MessageDTO> {
     return this.fs
-      .postMessage(id, dto.content, dto.author)
+      .postMessage(id, dto.content, dto.author.steam_id, dto.author.roles)
       .then(this.mapper.mapMessage);
   }
 

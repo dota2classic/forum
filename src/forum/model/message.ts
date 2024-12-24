@@ -4,8 +4,6 @@ export interface Message {
 
   author: string;
 
-  index: number;
-
   content: string;
 
   created_at: Date;

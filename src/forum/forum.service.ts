@@ -1,15 +1,13 @@
-import { ForbiddenException, Inject, Injectable, Logger } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { MessageEntity } from './model/message.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Connection, DataSource, Repository } from 'typeorm';
 import { ThreadEntity } from './model/thread.entity';
 import { EventBus } from '@nestjs/cqrs';
 import { MessageCreatedEvent } from '../gateway/events/message-created.event';
-import { ClientProxy } from '@nestjs/microservices';
 import { ThreadType } from '../gateway/shared-types/thread-type';
 import { MessageUpdatedEvent } from '../gateway/events/message-updated.event';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { JwtPayload, SortOrder, UpdateThreadDTO } from './dto/forum.dto';
+import { SortOrder, UpdateThreadDTO } from './dto/forum.dto';
 import { ForumUserEntity } from './model/forum-user.entity';
 import { didExpire } from '../gateway/util/expired';
 import { UserMutedException } from './exception/UserMutedException';
@@ -29,21 +27,15 @@ export class ForumService {
     private dataSource: DataSource,
     private connection: Connection,
     private readonly ebus: EventBus,
-    @Inject('QueryCore') private readonly redisEventQueue: ClientProxy,
   ) {}
-
-  @Cron(CronExpression.EVERY_30_SECONDS)
-  public async test() {
-    // const msgCount = await this.messageEntityRepository.count();
-    // this.logger.verbose(`Scheduled db check: message count is ${msgCount}`);
-  }
 
   async postMessage(
     threadId: string,
     content: string,
-    author: JwtPayload,
+    authorSteamId: string,
+    authorRoles: Role[],
   ): Promise<MessageEntity> {
-    await this.checkUserForWrite(author.steam_id);
+    await this.checkUserForWrite(authorSteamId);
 
     let thread: ThreadEntity = await this.threadEntityRepository.findOneOrFail({
       where: {
@@ -51,7 +43,7 @@ export class ForumService {
       },
     });
 
-    if (thread.admin_only && !author.roles.includes(Role.ADMIN))
+    if (thread.admin_only && !authorRoles.includes(Role.ADMIN))
       throw new ForbiddenException();
 
     const msg = await this.dataSource.transaction(async (transacManager) => {
@@ -64,15 +56,13 @@ export class ForumService {
       let msg = new MessageEntity();
       msg.thread_id = thread.id;
       msg.content = content.trim();
-      msg.author = author.steam_id;
+      msg.author = authorSteamId;
       msg.created_at = new Date();
-      msg.index = idx;
 
       return transacManager.save(msg);
     });
 
-    this.redisEventQueue.emit(
-      MessageCreatedEvent.name,
+    this.ebus.publish(
       new MessageCreatedEvent(
         msg.thread_id,
         thread.external_id,
@@ -80,7 +70,6 @@ export class ForumService {
         msg.author,
         msg.created_at.toUTCString(),
         msg.content,
-        msg.index,
       ),
     );
 
@@ -230,7 +219,6 @@ export class ForumService {
         msg.author,
         msg.created_at.toUTCString(),
         msg.content,
-        msg.index,
         msg.deleted,
       ),
     );

@@ -24,7 +24,6 @@ export class MessageDTO {
   content: string;
   author: string;
   createdAt: string;
-  index: number;
   deleted: boolean;
 }
 

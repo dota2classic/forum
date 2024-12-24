@@ -10,7 +10,6 @@ export class ForumMapper {
     threadId: msg.thread_id,
     content: msg.content,
     author: msg.author,
-    index: msg.index,
     deleted: msg.deleted,
     createdAt: msg.created_at.toUTCString(),
   });

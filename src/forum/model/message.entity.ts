@@ -19,9 +19,6 @@ export class MessageEntity implements Message {
   author: string;
 
   @Column()
-  index: number;
-
-  @Column()
   content: string;
 
   @Column({
