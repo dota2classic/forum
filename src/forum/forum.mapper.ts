@@ -11,7 +11,7 @@ export class ForumMapper {
     content: msg.content,
     author: msg.author,
     deleted: msg.deleted,
-    createdAt: msg.created_at.toUTCString(),
+    createdAt: msg.created_at.toISOString(),
   });
 
   public mapThread = (existing: ThreadEntity): ThreadDTO => {
