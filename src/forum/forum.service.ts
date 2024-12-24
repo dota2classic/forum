@@ -12,6 +12,7 @@ import { ForumUserEntity } from './model/forum-user.entity';
 import { didExpire } from '../gateway/util/expired';
 import { UserMutedException } from './exception/UserMutedException';
 import { Role } from '../gateway/shared-types/roles';
+import { LastMessageView } from './model/last-message.view';
 
 @Injectable()
 export class ForumService {
@@ -169,19 +170,25 @@ export class ForumService {
   }
 
   private getThreadBaseQuery(withLastMessage: boolean = true) {
-    const baseQuery = this.threadEntityRepository
+    let baseQuery = this.threadEntityRepository
       .createQueryBuilder('te')
       .leftJoin(MessageEntity, 'me', 'te.id = me.thread_id')
-      .leftJoin(MessageEntity, 'op', 'te.id = op.thread_id and op.index = 0')
       .addSelect('count(me)', 'messageCount')
       .addSelect(
         `sum((me.created_at >= NOW() - '8 hours'::interval)::int)`,
         'newMessageCount',
       )
+
+      .groupBy('te.id, te.external_id, te.thread_type, te.title');
+
+    baseQuery = baseQuery
+      .leftJoin(
+        LastMessageView,
+        'op',
+        `op.thread_id = te.id and op.is_last = false`,
+      )
       .addSelect('op.author', 'originalPoster')
-      .groupBy(
-        'te.id, te.external_id, te.thread_type, te.title, op.author, op.id',
-      );
+      .addGroupBy('op.author');
 
     if (withLastMessage)
       return baseQuery
@@ -189,10 +196,10 @@ export class ForumService {
           'te.lastMessage',
           'last_message_view',
           'lm',
-          `lm.thread_id = te.id and lm.deleted = false`,
+          `lm.thread_id = te.id and lm.is_last = true`,
         )
         .addGroupBy(
-          'lm.id, lm.author, lm.index, lm.deleted, lm.content, lm.created_at, lm.thread_id',
+          'lm.id, lm.author, lm.deleted, lm.content, lm.created_at, lm.thread_id',
         );
 
     return baseQuery;
