@@ -39,6 +39,9 @@ export class LastMessageView implements Message {
   @ViewColumn()
   id: string;
 
+  @ViewColumn({ name: 'is_last' })
+  isLast: string;
+
   @ViewColumn()
   thread_id: string;
 }
