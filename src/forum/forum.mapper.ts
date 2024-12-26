@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { MessageEntity } from './model/message.entity';
-import { MessageDTO, ThreadDTO } from './dto/forum.dto';
+import { ForumUserDTO, MessageDTO, ThreadDTO } from './dto/forum.dto';
 import { ThreadEntity } from './model/thread.entity';
+import { ForumUserEntity } from './model/forum-user.entity';
 
 @Injectable()
 export class ForumMapper {
@@ -30,4 +31,12 @@ export class ForumMapper {
         existing.lastMessage && this.mapMessage(existing.lastMessage),
     };
   };
+  public mapUser = async (
+    value: ForumUserEntity & { messages: number },
+  ): Promise<ForumUserDTO> =>
+    ({
+      muteUntil: value.muted_until.toISOString(),
+      steamId: value.steam_id,
+      messages: value.messages,
+    }) satisfies ForumUserDTO;
 }

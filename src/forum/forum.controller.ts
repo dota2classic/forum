@@ -17,6 +17,7 @@ import { ThreadEntity } from './model/thread.entity';
 import {
   CreateMessageDTO,
   CreateThreadDTO,
+  ForumUserDTO,
   MessageDTO,
   MessagePageDTO,
   SortOrder,
@@ -186,6 +187,11 @@ export class ForumController {
     @Body() dto: UpdateUserDTO,
   ) {
     await this.fs.updateUser(steam_id, dto.muteUntil);
+  }
+
+  @Get('/user/:id')
+  public async getUser(@Param('id') steam_id: string): Promise<ForumUserDTO> {
+    return this.fs.getUser(steam_id).then(this.mapper.mapUser);
   }
 
   private threadView(id: string) {

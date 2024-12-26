@@ -246,10 +246,10 @@ export class ForumService {
     return this.getThreadBaseQuery().where({ id }).getOne();
   }
 
-  public async updateUser(steamId: string, muteUntil: string | undefined) {
+  public async updateUser(steamId: string, muteUntil: string) {
     return this.forumUserEntityRepository.upsert(
       {
-        muted_until: muteUntil ? new Date(muteUntil) : undefined,
+        muted_until: new Date(muteUntil),
         steam_id: steamId,
       },
       ['steam_id'],
@@ -268,5 +268,21 @@ export class ForumService {
       author.muted_until === undefined || didExpire(author.muted_until);
 
     if (!muteExpired) throw new UserMutedException(author.muted_until);
+  }
+
+  public async getUser(steam_id: string) {
+    const user = (await this.forumUserEntityRepository.findOne({
+      where: { steam_id },
+    })) || {
+      steam_id: steam_id,
+      muted_until: new Date(new Date().getTime() - 10000000),
+    };
+
+    return {
+      ...user,
+      messages: await this.messageEntityRepository.count({
+        where: { author: steam_id },
+      }),
+    };
   }
 }

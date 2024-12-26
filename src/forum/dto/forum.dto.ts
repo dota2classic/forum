@@ -74,5 +74,11 @@ export class UpdateThreadDTO {
 }
 
 export class UpdateUserDTO {
-  muteUntil?: string;
+  muteUntil: string;
+}
+
+export class ForumUserDTO {
+  steamId: string;
+  muteUntil: string;
+  messages: number;
 }
