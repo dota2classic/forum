@@ -4,10 +4,13 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
+  Relation,
 } from 'typeorm';
 import { ThreadEntity } from './thread.entity';
 import { Message } from './message';
+import { ReactionEntity } from './reaction.entity';
 
 @Entity('message_entity')
 export class MessageEntity implements Message {
@@ -42,4 +45,7 @@ export class MessageEntity implements Message {
   @Column({ name: 'thread_id' })
   @Index()
   thread_id: string;
+
+  @OneToMany((type) => ReactionEntity, (msg) => msg.message, { eager: false })
+  reactions: Relation<ReactionEntity>[];
 }

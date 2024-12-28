@@ -2,6 +2,7 @@ import { ThreadType } from '../../gateway/shared-types/thread-type';
 import { ApiProperty } from '@nestjs/swagger';
 import { Page } from '../../gateway/shared-types/page';
 import { Role } from '../../gateway/shared-types/roles';
+import { MessageDTO } from './message.dto';
 
 export interface JwtPayload {
   steam_id: string;
@@ -16,15 +17,6 @@ export class CreateMessageDTO {
 export enum SortOrder {
   ASC = 'ASC',
   DESC = 'DESC',
-}
-
-export class MessageDTO {
-  threadId: string;
-  id: string;
-  content: string;
-  author: string;
-  createdAt: string;
-  deleted: boolean;
 }
 
 export class MessagePageDTO extends Page<MessageDTO> {

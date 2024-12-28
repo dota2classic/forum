@@ -1,0 +1,55 @@
+import { Injectable } from '@nestjs/common';
+import { MessageEntity } from './model/message.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { EventBus } from '@nestjs/cqrs';
+import { ReactionEntity } from './model/reaction.entity';
+
+@Injectable()
+export class MessageService {
+  constructor(
+    @InjectRepository(MessageEntity)
+    private readonly messageEntityRepository: Repository<MessageEntity>,
+    private readonly ebus: EventBus,
+    @InjectRepository(ReactionEntity)
+    private readonly reactionEntityRepository: Repository<ReactionEntity>,
+  ) {
+    const some = this.toggleReaction(
+      'a21f1640-0e42-4a8c-8b04-d7f5ed27bc71',
+      '1177028171',
+      29,
+    );
+  }
+
+  public async toggleReaction(
+    messageId: string,
+    author: string,
+    emoticonId: number,
+  ) {
+    await this.reactionEntityRepository
+      .createQueryBuilder()
+      .insert()
+      .into(ReactionEntity, ['messageId', 'emoticonId', 'author', 'active'])
+      .values({
+        messageId: messageId,
+        emoticonId: emoticonId,
+        author,
+        active: true,
+      })
+      .onConflict(
+        `("message_id", "emoticon_id", "author") DO UPDATE SET "active" = NOT "reaction_entity"."active"`,
+      )
+      .execute();
+
+    return this.fullMessage(messageId);
+  }
+
+  private async fullMessage(id: string): Promise<MessageEntity> {
+    return this.messageEntityRepository.findOneOrFail({
+      where: { id },
+      relations: {
+        reactions: true,
+      },
+    });
+  }
+}

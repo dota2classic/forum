@@ -5,7 +5,7 @@ export class UserMutedException extends HttpException {
     super(
       {
         message: `User is muted until`,
-        mutedUntil: mutedUntil.toUTCString(),
+        mutedUntil: mutedUntil.toISOString(),
       },
       HttpStatus.FORBIDDEN,
     );

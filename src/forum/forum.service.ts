@@ -4,9 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Connection, DataSource, Repository } from 'typeorm';
 import { ThreadEntity } from './model/thread.entity';
 import { EventBus } from '@nestjs/cqrs';
-import { MessageCreatedEvent } from '../gateway/events/message-created.event';
 import { ThreadType } from '../gateway/shared-types/thread-type';
-import { MessageUpdatedEvent } from '../gateway/events/message-updated.event';
 import { SortOrder, UpdateThreadDTO } from './dto/forum.dto';
 import { ForumUserEntity } from './model/forum-user.entity';
 import { didExpire } from '../gateway/util/expired';
@@ -47,7 +45,7 @@ export class ForumService {
     if (thread.admin_only && !authorRoles.includes(Role.ADMIN))
       throw new ForbiddenException();
 
-    const msg = await this.dataSource.transaction(async (transacManager) => {
+    return await this.dataSource.transaction(async (transacManager) => {
       const idx = await transacManager.count(MessageEntity, {
         where: {
           thread_id: thread.id,
@@ -62,19 +60,6 @@ export class ForumService {
 
       return transacManager.save(msg);
     });
-
-    this.ebus.publish(
-      new MessageCreatedEvent(
-        msg.thread_id,
-        thread.external_id,
-        msg.id,
-        msg.author,
-        msg.created_at.toUTCString(),
-        msg.content,
-      ),
-    );
-
-    return msg;
   }
 
   async getMessages(
@@ -86,6 +71,7 @@ export class ForumService {
     let query = this.messageEntityRepository
       .createQueryBuilder('me')
       .innerJoinAndSelect('me.thread', 'thread')
+      .leftJoinAndSelect('me.reactions', 'reactions')
       .where('thread.id = :thread_id', { thread_id })
       .andWhere('me.deleted = false')
       .orderBy('me.created_at', order);
@@ -218,19 +204,7 @@ export class ForumService {
         .execute()
     ).raw;
 
-    const msg = some[0];
-    this.ebus.publish(
-      new MessageUpdatedEvent(
-        msg.thread_id,
-        msg.id,
-        msg.author,
-        msg.created_at.toUTCString(),
-        msg.content,
-        msg.deleted,
-      ),
-    );
-
-    return msg;
+    return some[0];
   }
 
   public async updateThread(id: string, dto: UpdateThreadDTO) {

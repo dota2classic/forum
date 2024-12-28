@@ -18,7 +18,6 @@ import {
   CreateMessageDTO,
   CreateThreadDTO,
   ForumUserDTO,
-  MessageDTO,
   MessagePageDTO,
   SortOrder,
   ThreadDTO,
@@ -32,6 +31,10 @@ import { NullableIntPipe } from '../util/pipes';
 import { ApiBearerAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ThreadType } from '../gateway/shared-types/thread-type';
 import { makePage } from '../gateway/util/make-page';
+import { MessageService } from './message.service';
+import { MessageDTO, UpdateMessageReactionDto } from './dto/message.dto';
+import { MessageUpdatedEvent } from '../gateway/events/message-updated.event';
+import { EventBus } from '@nestjs/cqrs';
 
 @Controller('forum')
 @ApiTags('forum')
@@ -45,6 +48,9 @@ export class ForumController {
     private readonly threadEntityRepository: Repository<ThreadEntity>,
     private readonly fs: ForumService,
     private readonly mapper: ForumMapper,
+    private readonly messageService: MessageService,
+
+    private readonly ebus: EventBus,
   ) {}
 
   @ApiQuery({
@@ -158,14 +164,20 @@ export class ForumController {
     @Param('id') id: string,
     @Body() dto: CreateMessageDTO,
   ): Promise<MessageDTO> {
-    return this.fs
+    const msg = await this.fs
       .postMessage(id, dto.content, dto.author.steam_id, dto.author.roles)
       .then(this.mapper.mapMessage);
+
+    await this.messageUpdated(msg);
+
+    return msg;
   }
 
   @Delete('message/:id')
   async deleteMessage(@Param('id') id: string): Promise<MessageDTO> {
-    return this.fs.deleteMessage(id).then(this.mapper.mapMessage);
+    const msg = await this.fs.deleteMessage(id).then(this.mapper.mapMessage);
+    await this.messageUpdated(msg);
+    return msg;
   }
 
   @Patch('thread/:id')
@@ -174,11 +186,6 @@ export class ForumController {
     @Body() dto: UpdateThreadDTO,
   ): Promise<ThreadDTO> {
     return this.fs.updateThread(id, dto).then(this.mapper.mapThread);
-  }
-
-  @Get('healthcheck')
-  async healthcheck() {
-    return 'Yes im alive';
   }
 
   @Post('/user/:id')
@@ -192,6 +199,34 @@ export class ForumController {
   @Get('/user/:id')
   public async getUser(@Param('id') steam_id: string): Promise<ForumUserDTO> {
     return this.fs.getUser(steam_id).then(this.mapper.mapUser);
+  }
+
+  @Post('message/:id/react')
+  public async toggleReaction(
+    @Param('id') messageId: string,
+    @Body() dto: UpdateMessageReactionDto,
+  ): Promise<MessageDTO> {
+    const msg = await this.messageService
+      .toggleReaction(messageId, dto.author, dto.emoticonId)
+      .then(this.mapper.mapMessage);
+
+    await this.messageUpdated(msg);
+
+    return msg;
+  }
+
+  private async messageUpdated(msg: MessageDTO) {
+    this.ebus.publish(
+      new MessageUpdatedEvent(
+        msg.threadId,
+        msg.id,
+        msg.author,
+        msg.createdAt,
+        msg.content,
+        msg.deleted,
+        msg.reactions,
+      ),
+    );
   }
 
   private threadView(id: string) {

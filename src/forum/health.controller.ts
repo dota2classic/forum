@@ -1,12 +1,10 @@
 import {
-  HealthCheck,
   HealthCheckService,
   MicroserviceHealthIndicator,
   TypeOrmHealthIndicator,
 } from '@nestjs/terminus';
-import { Controller, Get, Inject } from '@nestjs/common';
-import { ClientProxy, Transport } from '@nestjs/microservices';
-import { REDIS_HOST, REDIS_PASSWORD, REDIS_PORT } from '../env';
+import { Controller, Inject } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { ApiExcludeController } from '@nestjs/swagger';
 
 @Controller('health')
@@ -19,20 +17,20 @@ export class HealthController {
     private microservice: MicroserviceHealthIndicator,
   ) {}
 
-  @Get()
-  @HealthCheck()
-  check() {
-    return this.health.check([
-      () => this.db.pingCheck('database'),
-      () =>
-        this.microservice.pingCheck('redis', {
-          transport: Transport.REDIS,
-          options: {
-            host: REDIS_HOST(),
-            port: REDIS_PORT(),
-            password: REDIS_PASSWORD(),
-          },
-        }),
-    ]);
-  }
+  // @Get()
+  // @HealthCheck()
+  // check() {
+  //   return this.health.check([
+  //     () => this.db.pingCheck('database'),
+  //     () =>
+  //       this.microservice.pingCheck('redis', {
+  //         transport: Transport.REDIS,
+  //         options: {
+  //           host: REDIS_HOST(),
+  //           port: REDIS_PORT(),
+  //           password: REDIS_PASSWORD(),
+  //         },
+  //       }),
+  //   ]);
+  // }
 }
