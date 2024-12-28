@@ -1,11 +1,15 @@
-import { MessageUpdatedEvent } from '../../gateway/events/message-updated.event';
+import {
+  EmoticonDto as EmoticonDtoInner,
+  MessageUpdatedEvent,
+  ReactionEntry as ReactionEntryInner,
+} from '../../gateway/events/message-updated.event';
 
 export class UpdateMessageReactionDto {
   author: string;
   emoticonId: number;
 }
 
-export class EmoticonDto {
+export class EmoticonDto extends EmoticonDtoInner {
   id: number;
   code: string;
 
@@ -13,7 +17,7 @@ export class EmoticonDto {
   key: string;
 }
 
-export class ReactionEntry {
+export class ReactionEntry extends ReactionEntryInner {
   emoticon: EmoticonDto;
   count: number;
 }

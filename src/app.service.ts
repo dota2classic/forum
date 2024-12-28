@@ -1,7 +1,6 @@
 import { Inject, Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { EventBus, ofType } from '@nestjs/cqrs';
 import { ClientProxy } from '@nestjs/microservices';
-import { MessageCreatedEvent } from './gateway/events/message-created.event';
 import { MessageUpdatedEvent } from './gateway/events/message-updated.event';
 
 @Injectable()
@@ -16,7 +15,7 @@ export class AppService implements OnApplicationBootstrap {
       await this.redisEventQueue.connect();
     } catch (e) {}
 
-    const publicEvents: any[] = [MessageCreatedEvent, MessageUpdatedEvent];
+    const publicEvents: any[] = [MessageUpdatedEvent];
 
     this.ebus
       .pipe(ofType(...publicEvents))

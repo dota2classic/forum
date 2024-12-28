@@ -3,10 +3,14 @@ import { MessageEntity } from './model/message.entity';
 import { ForumUserDTO, ThreadDTO } from './dto/forum.dto';
 import { ThreadEntity } from './model/thread.entity';
 import { ForumUserEntity } from './model/forum-user.entity';
-import { EmoticonDto, MessageDTO, ReactionEntry } from './dto/message.dto';
 import { ReactionEntity } from './model/reaction.entity';
 import { EmoticonService } from './emoticon.service';
 import { EmoticonEntity } from './model/emoticon.entity';
+import { MessageDTO } from './dto/message.dto';
+import {
+  EmoticonDto,
+  ReactionEntry,
+} from '../gateway/events/message-updated.event';
 
 @Injectable()
 export class ForumMapper {
