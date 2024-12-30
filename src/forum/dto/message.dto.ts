@@ -19,7 +19,7 @@ export class EmoticonDto extends EmoticonDtoInner {
 
 export class ReactionEntry extends ReactionEntryInner {
   emoticon: EmoticonDto;
-  count: number;
+  reacted: string[];
 }
 
 export class MessageDTO extends MessageUpdatedEvent {

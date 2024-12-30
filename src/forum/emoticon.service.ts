@@ -6,6 +6,7 @@ import { RawEmoticon } from './const/emoticons';
 import { InjectS3, S3 } from 'nestjs-s3';
 import { GetObjectCommandInput } from '@aws-sdk/client-s3/dist-types/commands/GetObjectCommand';
 import { PutObjectCommandInput } from '@aws-sdk/client-s3';
+import { ReactionEntity } from './model/reaction.entity';
 
 interface UploadedImage {
   bucket: string;
@@ -19,6 +20,8 @@ export class EmoticonService {
   constructor(
     @InjectRepository(EmoticonEntity)
     private readonly emoticonEntityRepository: Repository<EmoticonEntity>,
+    @InjectRepository(ReactionEntity)
+    private readonly reactionEntityRepository: Repository<ReactionEntity>,
     @InjectS3() private readonly s3: S3,
   ) {
     this.emoticonEntityRepository
@@ -84,5 +87,32 @@ export class EmoticonService {
 
       return { key, bucket };
     }
+  }
+
+  public get allEmoticons(): EmoticonEntity[] {
+    return Array.from(this.emoticonCache.values());
+  }
+
+  public async sortedEmoticons(steamId: string) {
+    interface PreferredReactionEntry {
+      emoticon_id: number;
+      count: number;
+    }
+    const preferred = await this.reactionEntityRepository
+      .createQueryBuilder('re')
+      .select('re.emoticon_id', 'emoticon_id')
+      .addSelect('count(*)', 'count')
+      .where('re.active')
+      .andWhere('re.author = :steamId', { steamId })
+      .groupBy('re.emoticon_id')
+      .getRawMany<PreferredReactionEntry>();
+
+    const oftenMap = Object.fromEntries(
+      preferred.map((it) => [it.emoticon_id, it.count]),
+    );
+
+    return this.allEmoticons.sort(
+      (a, b) => (oftenMap[b.id] || 0) - (oftenMap[a.id] || 0),
+    );
   }
 }

@@ -13,13 +13,7 @@ export class MessageService {
     private readonly ebus: EventBus,
     @InjectRepository(ReactionEntity)
     private readonly reactionEntityRepository: Repository<ReactionEntity>,
-  ) {
-    const some = this.toggleReaction(
-      'a21f1640-0e42-4a8c-8b04-d7f5ed27bc71',
-      '1177028171',
-      29,
-    );
-  }
+  ) {}
 
   public async toggleReaction(
     messageId: string,
@@ -45,11 +39,10 @@ export class MessageService {
   }
 
   private async fullMessage(id: string): Promise<MessageEntity> {
-    return this.messageEntityRepository.findOneOrFail({
-      where: { id },
-      relations: {
-        reactions: true,
-      },
-    });
+    return this.messageEntityRepository
+      .createQueryBuilder('me')
+      .where('me.id = :id', { id })
+      .leftJoinAndSelect('me.reactions', 'reactions', 'reactions.active')
+      .getOneOrFail();
   }
 }

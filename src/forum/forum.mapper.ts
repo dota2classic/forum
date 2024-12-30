@@ -27,13 +27,15 @@ export class ForumMapper {
     reactions: ReactionEntity[] | undefined,
   ): ReactionEntry[] => {
     if (!reactions) return [];
-    const m: Record<number, number> = {};
+    const m: Record<number, string[]> = {};
     for (let reaction of reactions) {
-      m[reaction.emoticonId] = (m[reaction.emoticonId] || 0) + 1;
+      m[reaction.emoticonId] = (m[reaction.emoticonId] || []).concat([
+        reaction.author,
+      ]);
     }
-    return Object.entries(m).map(([key, value]) => ({
+    return Object.entries(m).map(([key, reacted]) => ({
       emoticon: this.mapEmoticon(this.emoticonService.resolve(parseInt(key))),
-      count: value,
+      reacted,
     }));
   };
 

@@ -32,9 +32,14 @@ import { ApiBearerAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ThreadType } from '../gateway/shared-types/thread-type';
 import { makePage } from '../gateway/util/make-page';
 import { MessageService } from './message.service';
-import { MessageDTO, UpdateMessageReactionDto } from './dto/message.dto';
+import {
+  EmoticonDto,
+  MessageDTO,
+  UpdateMessageReactionDto,
+} from './dto/message.dto';
 import { MessageUpdatedEvent } from '../gateway/events/message-updated.event';
 import { EventBus } from '@nestjs/cqrs';
+import { EmoticonService } from './emoticon.service';
 
 @Controller('forum')
 @ApiTags('forum')
@@ -49,6 +54,7 @@ export class ForumController {
     private readonly fs: ForumService,
     private readonly mapper: ForumMapper,
     private readonly messageService: MessageService,
+    private readonly emoticonService: EmoticonService,
 
     private readonly ebus: EventBus,
   ) {}
@@ -110,7 +116,8 @@ export class ForumController {
     required: true,
   })
   @ApiQuery({
-    name: 'after',
+    name: 'cursor',
+    type: 'string',
     required: false,
   })
   @ApiQuery({
@@ -126,13 +133,13 @@ export class ForumController {
   @Get('thread/:id/messages')
   async messages(
     @Param('id') id: string,
-    @Query('after', NullableIntPipe) after?: number,
+    @Query('cursor') cursor: string,
     @Query('limit', NullableIntPipe) limit: number = 10,
     @Query('order') order: SortOrder = SortOrder.ASC,
   ): Promise<MessageDTO[]> {
     this.threadView(id);
     return this.fs
-      .getMessages(id, after, limit, order)
+      .getMessagesNew(id, limit, cursor, order)
       .then((it) => it.map(this.mapper.mapMessage));
   }
 
@@ -213,6 +220,21 @@ export class ForumController {
     await this.messageUpdated(msg);
 
     return msg;
+  }
+
+  @ApiQuery({
+    type: 'string',
+    required: false,
+    name: 'steam_id',
+  })
+  @Get('emoticons')
+  public async allEmoticons(
+    @Query('steam_id') steamId?: string,
+  ): Promise<EmoticonDto[]> {
+    const source = steamId
+      ? await this.emoticonService.sortedEmoticons(steamId)
+      : this.emoticonService.allEmoticons;
+    return source.map(this.mapper.mapEmoticon);
   }
 
   private async messageUpdated(msg: MessageDTO) {

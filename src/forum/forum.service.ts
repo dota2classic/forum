@@ -62,24 +62,30 @@ export class ForumService {
     });
   }
 
-  async getMessages(
-    thread_id: string,
-    after: number | undefined,
+  public async getMessagesNew(
+    threadId: string,
     limit: number,
+    cursor: string | undefined,
     order: SortOrder,
-  ): Promise<MessageEntity[]> {
+  ) {
+    cursor = cursor || new Date().toISOString();
     let query = this.messageEntityRepository
       .createQueryBuilder('me')
       .innerJoinAndSelect('me.thread', 'thread')
-      .leftJoinAndSelect('me.reactions', 'reactions')
-      .where('thread.id = :thread_id', { thread_id })
-      .andWhere('me.deleted = false')
-      .orderBy('me.created_at', order);
+      .leftJoinAndSelect('me.reactions', 'reactions', 'reactions.active')
+      .where('thread.id = :thread_id', { thread_id: threadId })
+      .andWhere('me.deleted = false');
 
-    if (after)
-      query = query.andWhere('me.created_at >= :after', {
-        after: new Date(after),
-      });
+    if (order === SortOrder.ASC) {
+      // we want to load newer messages
+      query = query
+        .andWhere('me.created_at > :cursor', { cursor })
+        .orderBy('me.created_at', 'ASC');
+    } else {
+      query = query
+        .andWhere('me.created_at < :cursor', { cursor })
+        .orderBy('me.created_at', 'DESC');
+    }
 
     return query.take(limit).getMany();
   }
@@ -88,6 +94,7 @@ export class ForumService {
     return this.messageEntityRepository
       .createQueryBuilder('me')
       .innerJoinAndSelect('me.thread', 'thread')
+      .leftJoinAndSelect('me.reactions', 'reactions', 'reactions.active')
       .where('thread.id = :thread_id', { thread_id })
       .andWhere('me.deleted = false')
       .orderBy('me.created_at', 'ASC')
