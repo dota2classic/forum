@@ -37,7 +37,6 @@ import {
   MessageDTO,
   UpdateMessageReactionDto,
 } from './dto/message.dto';
-import { MessageUpdatedEvent } from '../gateway/events/message-updated.event';
 import { EventBus } from '@nestjs/cqrs';
 import { EmoticonService } from './emoticon.service';
 
@@ -172,7 +171,13 @@ export class ForumController {
     @Body() dto: CreateMessageDTO,
   ): Promise<MessageDTO> {
     const msg = await this.fs
-      .postMessage(id, dto.content, dto.author.steam_id, dto.author.roles)
+      .postMessage(
+        id,
+        dto.content,
+        dto.replyMessageId,
+        dto.author.steam_id,
+        dto.author.roles,
+      )
       .then(this.mapper.mapMessage);
 
     await this.messageUpdated(msg);
@@ -238,17 +243,7 @@ export class ForumController {
   }
 
   private async messageUpdated(msg: MessageDTO) {
-    this.ebus.publish(
-      new MessageUpdatedEvent(
-        msg.threadId,
-        msg.id,
-        msg.author,
-        msg.createdAt,
-        msg.content,
-        msg.deleted,
-        msg.reactions,
-      ),
-    );
+    this.ebus.publish(this.mapper.mapMessageToEvent(msg));
   }
 
   private threadView(id: string) {

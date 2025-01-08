@@ -9,6 +9,7 @@ import { EmoticonEntity } from './model/emoticon.entity';
 import { MessageDTO } from './dto/message.dto';
 import {
   EmoticonDto,
+  MessageUpdatedEvent,
   ReactionEntry,
 } from '../gateway/events/message-updated.event';
 
@@ -46,6 +47,8 @@ export class ForumMapper {
     author: msg.author,
     deleted: msg.deleted,
     createdAt: msg.created_at.toISOString(),
+    updatedAt: msg.updated_at.toISOString(),
+    repliedMessage: msg.reply ? this.mapMessage(msg.reply) : undefined,
     reactions: this.mapReactions(msg.reactions),
   });
 
@@ -73,4 +76,19 @@ export class ForumMapper {
       steamId: value.steam_id,
       messages: value.messages,
     }) satisfies ForumUserDTO;
+
+  mapMessageToEvent = (msg: MessageDTO): MessageUpdatedEvent =>
+    new MessageUpdatedEvent(
+      msg.threadId,
+      msg.id,
+      msg.author,
+      msg.createdAt,
+      msg.updatedAt,
+      msg.content,
+      msg.deleted,
+      msg.repliedMessage
+        ? this.mapMessageToEvent(msg.repliedMessage)
+        : undefined,
+      msg.reactions,
+    );
 }

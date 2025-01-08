@@ -28,7 +28,10 @@ export class MessageDTO extends MessageUpdatedEvent {
   content: string;
   author: string;
   createdAt: string;
+  updatedAt: string;
   deleted: boolean;
+
+  repliedMessage: MessageDTO | undefined;
 
   reactions: ReactionEntry[];
 }

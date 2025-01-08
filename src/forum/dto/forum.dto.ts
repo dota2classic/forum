@@ -12,6 +12,7 @@ export interface JwtPayload {
 export class CreateMessageDTO {
   readonly author: JwtPayload;
   readonly content: string;
+  readonly replyMessageId?: string;
 }
 
 export enum SortOrder {

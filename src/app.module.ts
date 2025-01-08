@@ -36,6 +36,8 @@ import { MessageService } from './forum/message.service';
           entities: Entities,
           synchronize: true,
 
+          maxQueryExecutionTime: 200,
+
           ssl: false,
         };
       },

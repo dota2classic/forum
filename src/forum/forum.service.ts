@@ -1,4 +1,9 @@
-import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { MessageEntity } from './model/message.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Connection, DataSource, Repository } from 'typeorm';
@@ -31,6 +36,7 @@ export class ForumService {
   async postMessage(
     threadId: string,
     content: string,
+    replyMessageId: string | undefined,
     authorSteamId: string,
     authorRoles: Role[],
   ): Promise<MessageEntity> {
@@ -45,20 +51,33 @@ export class ForumService {
     if (thread.admin_only && !authorRoles.includes(Role.ADMIN))
       throw new ForbiddenException();
 
-    return await this.dataSource.transaction(async (transacManager) => {
-      const idx = await transacManager.count(MessageEntity, {
+    let repliedMessage: MessageEntity | undefined;
+
+    if (replyMessageId) {
+      repliedMessage = await this.messageEntityRepository.findOne({
         where: {
-          thread_id: thread.id,
+          id: replyMessageId,
+          deleted: false,
+          thread_id: threadId,
         },
       });
 
-      let msg = new MessageEntity();
-      msg.thread_id = thread.id;
-      msg.content = content.trim();
-      msg.author = authorSteamId;
-      msg.created_at = new Date();
+      if (!repliedMessage) {
+        throw new ConflictException('Bad reply message');
+      }
+    }
 
-      return transacManager.save(msg);
+    let msg = new MessageEntity();
+    msg.thread_id = thread.id;
+    msg.content = content.trim();
+    msg.author = authorSteamId;
+    msg.created_at = new Date();
+    msg.updated_at = new Date();
+    msg.reply_message_id = repliedMessage?.id;
+
+    return this.messageEntityRepository.save(msg).then((saved) => {
+      saved.reply = repliedMessage;
+      return saved;
     });
   }
 
@@ -73,6 +92,7 @@ export class ForumService {
       .createQueryBuilder('me')
       .innerJoinAndSelect('me.thread', 'thread')
       .leftJoinAndSelect('me.reactions', 'reactions', 'reactions.active')
+      .leftJoinAndSelect('me.reply', 'reply', 'not reply.deleted')
       .where('thread.id = :thread_id', { thread_id: threadId })
       .andWhere('me.deleted = false');
 
@@ -94,6 +114,7 @@ export class ForumService {
     return this.messageEntityRepository
       .createQueryBuilder('me')
       .innerJoinAndSelect('me.thread', 'thread')
+      .leftJoinAndSelect('me.reply', 'reply', 'not reply.deleted')
       .leftJoinAndSelect('me.reactions', 'reactions', 'reactions.active')
       .where('thread.id = :thread_id', { thread_id })
       .andWhere('me.deleted = false')

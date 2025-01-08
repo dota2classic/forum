@@ -30,8 +30,28 @@ export class MessageEntity implements Message {
   })
   created_at: Date;
 
+  @Column({
+    type: 'timestamptz',
+    name: 'updated_at',
+    default: 'now()',
+  })
+  updated_at: Date;
+
   @Column({ default: false })
   deleted: boolean;
+
+  @ManyToOne(() => MessageEntity, (msg) => msg.replies, {
+    eager: false,
+    nullable: true,
+  })
+  @JoinColumn({
+    foreignKeyConstraintName: 'FK_message_reply',
+    name: 'reply_message_id',
+  })
+  reply?: Relation<MessageEntity>;
+
+  @Column({ name: 'reply_message_id', nullable: true })
+  reply_message_id: string;
 
   @ManyToOne((type) => ThreadEntity, (thread) => thread.messages, {
     eager: true,
@@ -48,4 +68,7 @@ export class MessageEntity implements Message {
 
   @OneToMany((type) => ReactionEntity, (msg) => msg.message, { eager: false })
   reactions: Relation<ReactionEntity>[];
+
+  @OneToMany((type) => MessageEntity, (msg) => msg.reply, { eager: false })
+  replies: Relation<MessageEntity>[];
 }

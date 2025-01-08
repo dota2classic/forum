@@ -35,6 +35,15 @@ export class MessageService {
       )
       .execute();
 
+    await this.messageEntityRepository.update(
+      {
+        id: messageId,
+      },
+      {
+        updated_at: new Date().toISOString(),
+      },
+    );
+
     return this.fullMessage(messageId);
   }
 
