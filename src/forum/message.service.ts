@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { MessageEntity } from './model/message.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -43,6 +47,31 @@ export class MessageService {
         updated_at: new Date().toISOString(),
       },
     );
+
+    return this.fullMessage(messageId);
+  }
+
+  public async editMessage(
+    messageId: string,
+    content: string,
+    authorSteamId: string,
+  ) {
+    const msg = await this.messageEntityRepository.findOne({
+      where: {
+        id: messageId,
+      },
+    });
+
+    console.log(msg, messageId);
+
+    if (!msg) throw new NotFoundException('Message not found');
+
+    if (msg.author !== authorSteamId)
+      throw new ForbiddenException('Can only edit own messages');
+
+    msg.content = content;
+    msg.updated_at = new Date();
+    await this.messageEntityRepository.save(msg);
 
     return this.fullMessage(messageId);
   }

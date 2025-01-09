@@ -16,6 +16,7 @@ select me.id,
        me.author,
        me.content,
        me.created_at,
+       me.updated_at,
        me.thread_id,
        me.deleted,
        latest.last as is_last
@@ -32,6 +33,9 @@ export class LastMessageView implements Message {
 
   @ViewColumn()
   created_at: Date;
+
+  @ViewColumn()
+  updated_at: Date;
 
   @ViewColumn()
   deleted: boolean;

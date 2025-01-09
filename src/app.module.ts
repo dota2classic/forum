@@ -34,7 +34,10 @@ import { MessageService } from './forum/message.service';
           username: config.get('postgres.username'),
           password: config.get('postgres.password'),
           entities: Entities,
-          synchronize: true,
+          synchronize: false,
+          dropSchema: false,
+
+          logging: true,
 
           maxQueryExecutionTime: 200,
 

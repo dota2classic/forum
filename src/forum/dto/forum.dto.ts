@@ -15,16 +15,22 @@ export class CreateMessageDTO {
   readonly replyMessageId?: string;
 }
 
+export class EditMessageDTO {
+  readonly author: JwtPayload;
+  readonly content: string;
+}
+
 export enum SortOrder {
   ASC = 'ASC',
   DESC = 'DESC',
 }
 
-export class MessagePageDTO extends Page<MessageDTO> {
+export class MessagePageDTO extends Page<MessageDTO, string> {
   data: MessageDTO[];
   perPage: number;
   page: number;
   pages: number;
+  cursor?: string;
 }
 
 export class CreateThreadDTO {
@@ -55,7 +61,7 @@ export class ThreadDTO {
   readonly lastMessage?: MessageDTO;
 }
 
-export class ThreadPageDto extends Page<ThreadDTO> {
+export class ThreadPageDto extends Page<ThreadDTO, string> {
   data: ThreadDTO[];
   perPage: number;
   page: number;

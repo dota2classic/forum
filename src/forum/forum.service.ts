@@ -110,18 +110,64 @@ export class ForumService {
     return query.take(limit).getMany();
   }
 
-  async getMessagesPage(thread_id: string, page: number, perPage: number) {
-    return this.messageEntityRepository
+  public async getLatestPage(
+    thread_id: string,
+    perPage: number,
+  ): Promise<[MessageEntity[], number, string]> {
+    const [[data, count], cursor] = await Promise.combine([
+      this.getMessagesPage(thread_id, 0, perPage, undefined, SortOrder.DESC),
+      this.messageEntityRepository.findOne({
+        where: {
+          thread_id,
+          deleted: false,
+        },
+        order: {
+          created_at: 'ASC',
+        },
+      }),
+    ]);
+
+    return Promise.resolve([data, count, cursor.created_at.toISOString()]);
+  }
+
+  async getMessagesPage(
+    thread_id: string,
+    page: number,
+    perPage: number,
+    cursor: string | undefined,
+    order: SortOrder = SortOrder.ASC,
+  ): Promise<[MessageEntity[], number, string]> {
+    // Total message count
+    const count = this.messageEntityRepository.count({
+      where: {
+        thread_id: thread_id,
+        deleted: false,
+      },
+    });
+
+    let items = await this.messageEntityRepository
       .createQueryBuilder('me')
       .innerJoinAndSelect('me.thread', 'thread')
       .leftJoinAndSelect('me.reply', 'reply', 'not reply.deleted')
       .leftJoinAndSelect('me.reactions', 'reactions', 'reactions.active')
       .where('thread.id = :thread_id', { thread_id })
-      .andWhere('me.deleted = false')
-      .orderBy('me.created_at', 'ASC')
+      .andWhere('me.deleted = false');
+
+    if (cursor !== undefined) {
+      items = items.andWhere(
+        order === SortOrder.ASC
+          ? `me.created_at >  :cursor`
+          : `me.created_at < :cursor`,
+        { cursor },
+      );
+    }
+
+    items = items
+      .orderBy('me.created_at', order === SortOrder.ASC ? 'ASC' : 'DESC')
       .take(perPage)
-      .skip(page * perPage)
-      .getManyAndCount();
+      .skip(page * perPage);
+
+    return Promise.combine([items.getMany(), count, Promise.resolve(cursor)]);
   }
 
   async getOrCreateThread(
@@ -152,15 +198,44 @@ export class ForumService {
     perPage: number,
     threadType?: ThreadType,
   ): Promise<[ThreadEntity[], number]> {
-    const q = this.getThreadBaseQuery()
+    const where = threadType ? { thread_type: threadType } : {};
+
+    const count = await this.threadEntityRepository.query(
+      `WITH "thread_stats" AS (select me.thread_id,
+                               count(me)                                                    AS "message_count",
+                               sum(("me"."created_at" >= NOW() - '8 hours'::interval)::int) AS "new_message_count"
+                        from message_entity me
+                        group by 1)
+SELECT COUNT(DISTINCT ("ts"."thread_id")) AS "cnt"
+from thread_entity te
+         left join thread_stats ts on ts.thread_id = te.id
+where te.thread_type = $1`,
+      [threadType],
+    );
+
+    const ids: { thread_id: string }[] =
+      await this.messageEntityRepository.query(
+        `WITH "thread_stats" AS (select me.thread_id,
+                               count(me)                                                    AS "message_count",
+                               sum(("me"."created_at" >= NOW() - '8 hours'::interval)::int) AS "new_message_count"
+                        from message_entity me
+                        group by 1)
+SELECT DISTINCT ("ts"."thread_id") AS "thread_id"
+from thread_entity te
+         left join thread_stats ts on ts.thread_id = te.id
+where te.thread_type = $1
+offset $2
+limit $3`,
+        [threadType, perPage * page, perPage],
+      );
+
+    const realThreads = await this.getThreadBaseQuery()
       .orderBy('te.pinned', 'DESC')
       .addOrderBy('lm.created_at', 'DESC')
-      .where(threadType ? { thread_type: threadType } : {})
-      .having('COUNT(me) > 0')
-      .skip(perPage * page)
-      .take(perPage);
+      .where('te.id in (:...ids)', { ids: ids.map((it) => it.thread_id) })
+      .getMany();
 
-    return q.getManyAndCount();
+    return [realThreads, count];
   }
 
   getThread(id: string): Promise<ThreadEntity> {
@@ -186,14 +261,21 @@ export class ForumService {
   private getThreadBaseQuery(withLastMessage: boolean = true) {
     let baseQuery = this.threadEntityRepository
       .createQueryBuilder('te')
-      .leftJoin(MessageEntity, 'me', 'te.id = me.thread_id')
-      .addSelect('count(me)', 'messageCount')
-      .addSelect(
-        `sum((me.created_at >= NOW() - '8 hours'::interval)::int)`,
-        'newMessageCount',
+      .addCommonTableExpression(
+        `select me.thread_id,
+           count(me)                                                    AS "message_count",
+           sum(("me"."created_at" >= NOW() - '8 hours'::interval)::int) AS "new_message_count"
+    from message_entity me
+    group by 1`,
+        'thread_stats',
       )
+      .leftJoin('thread_stats', 'ts', 'ts.thread_id = te.id')
+      .addSelect('ts.message_count', 'messageCount')
+      .addSelect(`ts.new_message_count`, 'newMessageCount')
 
-      .groupBy('te.id, te.external_id, te.thread_type, te.title');
+      .groupBy(
+        'te.id, te.external_id, te.thread_type, te.title, ts.message_count, ts.new_message_count',
+      );
 
     baseQuery = baseQuery
       .leftJoin(
@@ -213,7 +295,7 @@ export class ForumService {
           `lm.thread_id = te.id and lm.is_last = true`,
         )
         .addGroupBy(
-          'lm.id, lm.author, lm.deleted, lm.content, lm.created_at, lm.thread_id, lm.is_last',
+          'lm.id, lm.author, lm.deleted, lm.content, lm.updated_at, lm.created_at, lm.thread_id, lm.is_last',
         );
 
     return baseQuery;

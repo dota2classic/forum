@@ -1,5 +1,5 @@
 import { otelSDK } from './tracer';
-
+import './util/promise-combine';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Transport } from '@nestjs/microservices';
@@ -44,5 +44,6 @@ async function bootstrap() {
   await app.listen(6009);
 
   await app.startAllMicroservices();
+  console.log('Started');
 }
 bootstrap();

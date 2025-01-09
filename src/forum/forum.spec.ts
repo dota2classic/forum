@@ -15,6 +15,9 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { StartedRedisContainer } from '@testcontainers/redis';
 import { ThreadType } from '../gateway/shared-types/thread-type';
 import { LastMessageView } from './model/last-message.view';
+import { ReactionEntity } from './model/reaction.entity';
+import { EmoticonService } from './emoticon.service';
+import { EmoticonEntity } from './model/emoticon.entity';
 
 describe('somethin', () => {
   jest.setTimeout(60000);
@@ -37,6 +40,8 @@ describe('somethin', () => {
       ThreadEntity,
       ForumUserEntity,
       LastMessageView,
+      ReactionEntity,
+      EmoticonEntity,
     ];
 
     const [_container, imports] = await withPostgres(Entities);
@@ -62,7 +67,7 @@ describe('somethin', () => {
         ]),
       ],
       controllers: [ForumController],
-      providers: [ForumService, ForumMapper, AppService],
+      providers: [ForumService, ForumMapper, EmoticonService, AppService],
     }).compile();
 
     controller = module.get(ForumController);
@@ -90,6 +95,7 @@ describe('somethin', () => {
           fs.postMessage(
             thread.id,
             `Message #${index}`,
+            undefined,
             `1000000${index % 10}`,
             [],
           ),

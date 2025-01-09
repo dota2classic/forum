@@ -17,6 +17,7 @@ import { ThreadEntity } from './model/thread.entity';
 import {
   CreateMessageDTO,
   CreateThreadDTO,
+  EditMessageDTO,
   ForumUserDTO,
   MessagePageDTO,
   SortOrder,
@@ -147,6 +148,32 @@ export class ForumController {
     required: true,
   })
   @ApiQuery({
+    name: 'perPage',
+    required: false,
+  })
+  @Get('thread/:id/latestPage')
+  async getLatestPage(
+    @Param('id') id: string,
+    @Query('perPage', NullableIntPipe) perPage: number = 15,
+  ): Promise<MessagePageDTO> {
+    this.threadView(id);
+    const [msgs, cnt, cursor] = await this.fs.getLatestPage(id, perPage);
+
+    return makePage(
+      msgs,
+      cnt,
+      Math.floor(cnt / perPage),
+      perPage,
+      this.mapper.mapMessage,
+      cursor,
+    );
+  }
+
+  @ApiParam({
+    name: 'id',
+    required: true,
+  })
+  @ApiQuery({
     name: 'page',
     required: true,
   })
@@ -154,14 +181,25 @@ export class ForumController {
     name: 'perPage',
     required: false,
   })
+  @ApiQuery({
+    name: 'cursor',
+    type: 'string',
+    required: false,
+  })
   @Get('thread/:id/page')
   async messagesPage(
     @Param('id') id: string,
+    @Query('cursor') cursor: string | undefined,
     @Query('page', NullableIntPipe) page: number,
     @Query('perPage', NullableIntPipe) perPage: number = 15,
   ): Promise<MessagePageDTO> {
     this.threadView(id);
-    const [msgs, cnt] = await this.fs.getMessagesPage(id, page, perPage);
+    const [msgs, cnt] = await this.fs.getMessagesPage(
+      id,
+      page,
+      perPage,
+      cursor,
+    );
     return makePage(msgs, cnt, page, perPage, this.mapper.mapMessage);
   }
 
@@ -178,6 +216,20 @@ export class ForumController {
         dto.author.steam_id,
         dto.author.roles,
       )
+      .then(this.mapper.mapMessage);
+
+    await this.messageUpdated(msg);
+
+    return msg;
+  }
+
+  @Patch('message/:id')
+  async editMessage(
+    @Param('id') messageId: string,
+    @Body() dto: EditMessageDTO,
+  ): Promise<MessageDTO> {
+    const msg = await this.messageService
+      .editMessage(messageId, dto.content, dto.author.steam_id)
       .then(this.mapper.mapMessage);
 
     await this.messageUpdated(msg);
