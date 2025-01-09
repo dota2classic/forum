@@ -198,15 +198,13 @@ export class ForumService {
     perPage: number,
     threadType?: ThreadType,
   ): Promise<[ThreadEntity[], number]> {
-    const where = threadType ? { thread_type: threadType } : {};
-
-    const count = await this.threadEntityRepository.query(
+    const count: { cnt: number }[] = await this.threadEntityRepository.query(
       `WITH "thread_stats" AS (select me.thread_id,
                                count(me)                                                    AS "message_count",
                                sum(("me"."created_at" >= NOW() - '8 hours'::interval)::int) AS "new_message_count"
                         from message_entity me
                         group by 1)
-SELECT COUNT(DISTINCT ("ts"."thread_id")) AS "cnt"
+SELECT COUNT(DISTINCT ("ts"."thread_id"))::int AS "cnt"
 from thread_entity te
          left join thread_stats ts on ts.thread_id = te.id
 where te.thread_type = $1`,
@@ -235,7 +233,7 @@ limit $3`,
       .where('te.id in (:...ids)', { ids: ids.map((it) => it.thread_id) })
       .getMany();
 
-    return [realThreads, count];
+    return [realThreads, count[0].cnt];
   }
 
   getThread(id: string): Promise<ThreadEntity> {

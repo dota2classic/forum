@@ -37,8 +37,6 @@ import { MessageService } from './forum/message.service';
           synchronize: false,
           dropSchema: false,
 
-          logging: true,
-
           maxQueryExecutionTime: 200,
 
           ssl: false,

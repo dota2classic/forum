@@ -86,6 +86,8 @@ export class ForumController {
       threadType,
     );
 
+    console.log(page, perPage, threadType, cnt);
+
     return makePage(threads, cnt, page, perPage, this.mapper.mapThread);
   }
 
