@@ -46,6 +46,7 @@ export class ForumMapper {
     content: msg.content,
     author: msg.author,
     deleted: msg.deleted,
+    edited: msg.edited,
     createdAt: msg.created_at.toISOString(),
     updatedAt: msg.updated_at.toISOString(),
     repliedMessage: msg.reply ? this.mapMessage(msg.reply) : undefined,
@@ -86,6 +87,7 @@ export class ForumMapper {
       msg.updatedAt,
       msg.content,
       msg.deleted,
+      msg.edited,
       msg.repliedMessage
         ? this.mapMessageToEvent(msg.repliedMessage)
         : undefined,

@@ -40,6 +40,9 @@ export class MessageEntity implements Message {
   @Column({ default: false })
   deleted: boolean;
 
+  @Column({ default: false })
+  edited: boolean;
+
   @ManyToOne(() => MessageEntity, (msg) => msg.replies, {
     eager: false,
     nullable: true,

@@ -30,6 +30,7 @@ export class MessageDTO extends MessageUpdatedEvent {
   createdAt: string;
   updatedAt: string;
   deleted: boolean;
+  edited: boolean;
 
   repliedMessage: MessageDTO | undefined;
 

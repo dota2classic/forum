@@ -62,8 +62,6 @@ export class MessageService {
       },
     });
 
-    console.log(msg, messageId);
-
     if (!msg) throw new NotFoundException('Message not found');
 
     if (msg.author !== authorSteamId)
@@ -71,6 +69,7 @@ export class MessageService {
 
     msg.content = content;
     msg.updated_at = new Date();
+    msg.edited = true;
     await this.messageEntityRepository.save(msg);
 
     return this.fullMessage(messageId);
