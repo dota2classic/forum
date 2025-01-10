@@ -211,17 +211,23 @@ where te.thread_type = $1`,
       [threadType],
     );
 
-    const ids: { thread_id: string }[] =
+    const ids: { id: string; pinned: boolean; created_at: string }[] =
       await this.messageEntityRepository.query(
-        `WITH "thread_stats" AS (select me.thread_id,
-                               count(me)                                                    AS "message_count",
-                               sum(("me"."created_at" >= NOW() - '8 hours'::interval)::int) AS "new_message_count"
-                        from message_entity me
-                        group by 1)
-SELECT DISTINCT ("ts"."thread_id") AS "thread_id"
+        `
+SELECT DISTINCT thread_seq.id, thread_seq.pinned, thread_seq.created_at FROM 
+(WITH "thread_stats" AS (select me.thread_id,
+         count(me)                                                    AS "message_count",
+         sum(("me"."created_at" >= NOW() - '8 hours'::interval)::int) AS "new_message_count"
+    from message_entity me
+    group by 1
+  )
+SELECT te.id, te.pinned, lm.created_at
 from thread_entity te
          left join thread_stats ts on ts.thread_id = te.id
+         left join last_message_view lm on lm.thread_id = te.id and lm.is_last = true
 where te.thread_type = $1
+) thread_seq
+order by thread_seq.pinned DESC, thread_seq.created_at DESC
 offset $2
 limit $3`,
         [threadType, perPage * page, perPage],
@@ -230,7 +236,7 @@ limit $3`,
     const realThreads = await this.getThreadBaseQuery()
       .orderBy('te.pinned', 'DESC')
       .addOrderBy('lm.created_at', 'DESC')
-      .where('te.id in (:...ids)', { ids: ids.map((it) => it.thread_id) })
+      .where('te.id in (:...ids)', { ids: ids.map((it) => it.id) })
       .getMany();
 
     return [realThreads, count[0].cnt];
