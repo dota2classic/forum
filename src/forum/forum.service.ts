@@ -196,6 +196,7 @@ export class ForumService {
   public async getThreadPage(
     page: number,
     perPage: number,
+    opSteamId?: string,
     threadType?: ThreadType,
   ): Promise<[ThreadEntity[], number]> {
     const count: { cnt: number }[] = await this.threadEntityRepository.query(
@@ -225,19 +226,28 @@ SELECT te.id, te.pinned, lm.created_at
 from thread_entity te
          left join thread_stats ts on ts.thread_id = te.id
          left join last_message_view lm on lm.thread_id = te.id and lm.is_last = true
-where te.thread_type = $1
+         ${opSteamId === undefined ? '' : `left join last_message_view op on op.thread_id = te.id and op.is_last = false`}
+where te.thread_type = $1${opSteamId === undefined ? '' : ` and op.author = $4`}
 ) thread_seq
 order by thread_seq.pinned DESC, thread_seq.created_at DESC
 offset $2
 limit $3`,
-        [threadType, perPage * page, perPage],
+        [
+          threadType,
+          perPage * page,
+          perPage,
+          ...(opSteamId ? [opSteamId] : []),
+        ],
       );
 
-    const realThreads = await this.getThreadBaseQuery()
-      .orderBy('te.pinned', 'DESC')
-      .addOrderBy('lm.created_at', 'DESC')
-      .where('te.id in (:...ids)', { ids: ids.map((it) => it.id) })
-      .getMany();
+    const realThreads =
+      ids.length === 0
+        ? []
+        : await this.getThreadBaseQuery()
+            .orderBy('te.pinned', 'DESC')
+            .addOrderBy('lm.created_at', 'DESC')
+            .where('te.id in (:...ids)', { ids: ids.map((it) => it.id) })
+            .getMany();
 
     return [realThreads, count[0].cnt];
   }

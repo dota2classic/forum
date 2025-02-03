@@ -4,8 +4,9 @@ import { Page } from '../../gateway/shared-types/page';
 import { Role } from '../../gateway/shared-types/roles';
 import { MessageDTO } from './message.dto';
 
-export interface JwtPayload {
+export class JwtPayload {
   steam_id: string;
+  @ApiProperty({ enum: Role, enumName: 'Role', isArray: true })
   roles: Role[];
 }
 

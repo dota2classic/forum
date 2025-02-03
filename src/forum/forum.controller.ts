@@ -68,6 +68,11 @@ export class ForumController {
     required: false,
   })
   @ApiQuery({
+    name: 'steamId',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
     name: 'threadType',
     required: false,
     enum: ThreadType,
@@ -77,16 +82,16 @@ export class ForumController {
   async threads(
     @Req() req: any,
     @Query('page', NullableIntPipe) page: number,
+    @Query('steamId') steamId?: string,
     @Query('perPage', NullableIntPipe) perPage: number = 25,
     @Query('threadType') threadType?: ThreadType,
   ): Promise<ThreadPageDto> {
     const [threads, cnt] = await this.fs.getThreadPage(
       page,
       perPage,
+      steamId,
       threadType,
     );
-
-    console.log(page, perPage, threadType, cnt);
 
     return makePage(threads, cnt, page, perPage, this.mapper.mapThread);
   }
@@ -158,6 +163,7 @@ export class ForumController {
     @Param('id') id: string,
     @Query('perPage', NullableIntPipe) perPage: number = 15,
   ): Promise<MessagePageDTO> {
+    console.log(id);
     this.threadView(id);
     const [msgs, cnt, cursor] = await this.fs.getLatestPage(id, perPage);
 
