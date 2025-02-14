@@ -4,8 +4,9 @@ import { join } from 'path';
 
 const YAML_CONFIG_FILENAME = 'config.yaml';
 
-export default () => {
-  return yaml.load(
-    readFileSync(join('./', YAML_CONFIG_FILENAME), 'utf8'),
-  ) as Record<string, any>;
+export default (filename = YAML_CONFIG_FILENAME) => {
+  return yaml.load(readFileSync(join('./', filename), 'utf8')) as Record<
+    string,
+    any
+  >;
 };

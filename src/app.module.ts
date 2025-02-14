@@ -16,6 +16,7 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm/dist/interfaces/typeorm-op
 import configuration from './configuration';
 import { S3ModuleOptions } from 'nestjs-s3/dist/s3.interfaces';
 import { MessageService } from './forum/message.service';
+import { getTypeormConfig } from './config/typeorm.config';
 
 @Module({
   imports: [
@@ -27,20 +28,12 @@ import { MessageService } from './forum/message.service';
     TypeOrmModule.forRootAsync({
       useFactory(config: ConfigService): TypeOrmModuleOptions {
         return {
+          ...getTypeormConfig(config),
           type: 'postgres',
           database: 'postgres',
-          host: config.get('postgres.host'),
-          port: 5432,
-          username: config.get('postgres.username'),
-          password: config.get('postgres.password'),
-          entities: Entities,
-          synchronize: true,
-          dropSchema: false,
-
-          maxQueryExecutionTime: 200,
-
-          ssl: false,
-        };
+          migrations: ['dist/database/migrations/*.*'],
+          migrationsRun: true,
+        } satisfies TypeOrmModuleOptions;
       },
       imports: [],
       inject: [ConfigService],
