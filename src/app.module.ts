@@ -33,6 +33,7 @@ import { getTypeormConfig } from './config/typeorm.config';
           database: 'postgres',
           migrations: ['dist/database/migrations/*.*'],
           migrationsRun: true,
+          logging: undefined,
         } satisfies TypeOrmModuleOptions;
       },
       imports: [],
