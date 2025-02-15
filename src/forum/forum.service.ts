@@ -127,7 +127,11 @@ export class ForumService {
       }),
     ]);
 
-    return Promise.resolve([data, count, cursor.created_at.toISOString()]);
+    return Promise.resolve([
+      data,
+      count,
+      cursor?.created_at?.toISOString() || new Date(1970, 6).toISOString(),
+    ]);
   }
 
   async getMessagesPage(
