@@ -163,7 +163,6 @@ export class ForumController {
     @Param('id') id: string,
     @Query('perPage', NullableIntPipe) perPage: number = 15,
   ): Promise<MessagePageDTO> {
-    console.log(id);
     this.threadView(id);
     const [msgs, cnt, cursor] = await this.fs.getLatestPage(id, perPage);
 
