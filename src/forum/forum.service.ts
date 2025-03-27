@@ -16,6 +16,7 @@ import { didExpire } from '../gateway/util/expired';
 import { UserMutedException } from './exception/UserMutedException';
 import { Role } from '../gateway/shared-types/roles';
 import { LastMessageView } from './model/last-message.view';
+import { measure } from '../util/measure';
 
 @Injectable()
 export class ForumService {
@@ -81,6 +82,7 @@ export class ForumService {
     });
   }
 
+  @measure('getMessagesCursor')
   public async getMessagesNew(
     threadId: string,
     limit: number,
@@ -110,6 +112,7 @@ export class ForumService {
     return query.take(limit).getMany();
   }
 
+  @measure('getLatestPage')
   public async getLatestPage(
     thread_id: string,
     perPage: number,
@@ -134,6 +137,7 @@ export class ForumService {
     ]);
   }
 
+  @measure('getMessagesPage')
   async getMessagesPage(
     thread_id: string,
     page: number,
