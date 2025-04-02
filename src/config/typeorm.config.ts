@@ -21,6 +21,11 @@ export const getTypeormConfig = (
     migrationsRun: false,
     migrationsTableName: 'forum_migrations',
     logging: true,
+
+    poolSize: 30,
+    extra: {
+      connectionLimit: 30,
+    },
   };
 };
 
