@@ -201,6 +201,7 @@ export class ForumService {
     return q.getOneOrFail();
   }
 
+  @measure('getThreadPage')
   public async getThreadPage(
     page: number,
     perPage: number,
@@ -260,6 +261,7 @@ limit $3`,
     return [realThreads, count[0].cnt];
   }
 
+  @measure('getThread(id)')
   getThread(id: string): Promise<ThreadEntity> {
     return this.getThreadBaseQuery(false)
       .where({
