@@ -117,24 +117,13 @@ export class ForumService {
     thread_id: string,
     perPage: number,
   ): Promise<[MessageEntity[], number, string]> {
-    const [[data, count], cursor] = await Promise.combine([
-      this.getMessagesPage(thread_id, 0, perPage, undefined, SortOrder.DESC),
-      this.messageEntityRepository.findOne({
-        where: {
-          thread_id,
-          deleted: false,
-        },
-        order: {
-          created_at: 'ASC',
-        },
-      }),
-    ]);
-
-    return Promise.resolve([
-      data,
-      count,
-      cursor?.created_at?.toISOString() || new Date(1970, 6).toISOString(),
-    ]);
+    return this.getMessagesPage(
+      thread_id,
+      -1,
+      perPage,
+      undefined,
+      SortOrder.ASC,
+    );
   }
 
   @measure('getMessagesPage')
@@ -146,12 +135,16 @@ export class ForumService {
     order: SortOrder = SortOrder.ASC,
   ): Promise<[MessageEntity[], number, string]> {
     // Total message count
-    const count = this.messageEntityRepository.count({
+    const count = await this.messageEntityRepository.count({
       where: {
         thread_id: thread_id,
         deleted: false,
       },
     });
+
+    if (page === -1) {
+      page = Math.max(0, Math.ceil(count / perPage) - 1);
+    }
 
     let items = await this.messageEntityRepository
       .createQueryBuilder('me')
@@ -175,7 +168,7 @@ export class ForumService {
       .take(perPage)
       .skip(page * perPage);
 
-    return Promise.combine([items.getMany(), count, Promise.resolve(cursor)]);
+    return [await items.getMany(), count, cursor];
   }
 
   async getOrCreateThread(
