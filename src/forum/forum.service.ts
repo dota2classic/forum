@@ -136,9 +136,11 @@ export class ForumService {
     order: SortOrder = SortOrder.ASC,
   ): Promise<[MessageEntity[], number, string]> {
     // Total message count
-    const count = await this.dataSource.query<{
-      count: number;
-    }>(ForumSqlFactory.getThreadMessageCountRequest(), [thread_id]);
+    const [count] = await this.dataSource.query<
+      {
+        count: number;
+      }[]
+    >(ForumSqlFactory.getThreadMessageCountRequest(), [thread_id]);
 
     if (page === -1) {
       page = Math.max(0, Math.ceil(count.count / perPage) - 1);
