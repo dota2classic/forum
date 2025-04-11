@@ -162,13 +162,17 @@ export class ForumService {
         .then((it) => it.map((z) => z.id));
     }
 
+    if (messageIds.length === 0) {
+      return [[], count.count, cursor];
+    }
+
     let items = await this.messageEntityRepository
       .createQueryBuilder('me')
       .innerJoinAndSelect('me.thread', 'thread')
       .leftJoinAndSelect('me.reply', 'reply', 'not reply.deleted')
       .leftJoinAndSelect('me.reactions', 'reactions', 'reactions.active')
-      .where('me.id in (:...ids)', { ids: messageIds })
       .orderBy('me.created_at', order === SortOrder.ASC ? 'ASC' : 'DESC')
+      .where('me.id in (:...ids)', { ids: messageIds })
       .getMany();
 
     return [items, count.count, cursor];
