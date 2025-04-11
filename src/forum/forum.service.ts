@@ -17,6 +17,7 @@ import { UserMutedException } from './exception/UserMutedException';
 import { Role } from '../gateway/shared-types/roles';
 import { LastMessageView } from './model/last-message.view';
 import { measure } from '../util/measure';
+import { ForumSqlFactory } from './forum-sql.factory';
 
 @Injectable()
 export class ForumService {
@@ -135,15 +136,28 @@ export class ForumService {
     order: SortOrder = SortOrder.ASC,
   ): Promise<[MessageEntity[], number, string]> {
     // Total message count
-    const count = await this.messageEntityRepository.count({
-      where: {
-        thread_id: thread_id,
-        deleted: false,
-      },
-    });
+    const count = await this.dataSource.query<{
+      count: number;
+    }>(ForumSqlFactory.getThreadMessageCountRequest(), [thread_id]);
 
     if (page === -1) {
-      page = Math.max(0, Math.ceil(count / perPage) - 1);
+      page = Math.max(0, Math.ceil(count.count / perPage) - 1);
+    }
+
+    let messageIds: string[];
+
+    if (cursor) {
+      messageIds = await this.dataSource
+        .query<
+          { id: string }[]
+        >(ForumSqlFactory.getThreadMessagePageCursorIds(order), [thread_id, cursor, perPage])
+        .then((it) => it.map((z) => z.id));
+    } else {
+      messageIds = await this.dataSource
+        .query<
+          { id: string }[]
+        >(ForumSqlFactory.getThreadMessagePageIds(), [thread_id, page * perPage, perPage])
+        .then((it) => it.map((z) => z.id));
     }
 
     let items = await this.messageEntityRepository
@@ -151,24 +165,11 @@ export class ForumService {
       .innerJoinAndSelect('me.thread', 'thread')
       .leftJoinAndSelect('me.reply', 'reply', 'not reply.deleted')
       .leftJoinAndSelect('me.reactions', 'reactions', 'reactions.active')
-      .where('thread.id = :thread_id', { thread_id })
-      .andWhere('me.deleted = false');
-
-    if (cursor !== undefined) {
-      items = items.andWhere(
-        order === SortOrder.ASC
-          ? `me.created_at >  :cursor`
-          : `me.created_at < :cursor`,
-        { cursor },
-      );
-    }
-
-    items = items
+      .where('me.id in (:...ids)', { ids: messageIds })
       .orderBy('me.created_at', order === SortOrder.ASC ? 'ASC' : 'DESC')
-      .take(perPage)
-      .skip(page * perPage);
+      .getMany();
 
-    return [await items.getMany(), count, cursor];
+    return [items, count.count, cursor];
   }
 
   async getOrCreateThread(

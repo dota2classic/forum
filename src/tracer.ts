@@ -7,6 +7,7 @@ import { Resource } from '@opentelemetry/resources';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
 import configuration from './configuration';
+import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 
 const cfg = configuration();
 const exporterOptions = {
@@ -19,7 +20,7 @@ export const otelSDK = new NodeSDK({
   traceExporter,
   instrumentations: [
     new HttpInstrumentation(),
-    // new ExpressInstrumentation(),
+    new ExpressInstrumentation(),
     new NestInstrumentation(),
     new PgInstrumentation(),
   ],

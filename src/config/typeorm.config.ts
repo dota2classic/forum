@@ -20,7 +20,7 @@ export const getTypeormConfig = (
     migrations: ['src/database/migrations/*.*'],
     migrationsRun: false,
     migrationsTableName: 'forum_migrations',
-    // logging: true,
+    logging: true,
 
     poolSize: 30,
     extra: {
