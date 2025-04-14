@@ -4,9 +4,9 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Transport } from '@nestjs/microservices';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { WinstonWrapper } from './util/logger';
 import configuration from './configuration';
 import { ConfigService } from '@nestjs/config';
+import { WinstonWrapper } from '@dota2classic/nest_logger';
 
 async function bootstrap() {
   await otelSDK.start();
@@ -17,6 +17,7 @@ async function bootstrap() {
     logger: new WinstonWrapper(
       config.get('fluentbit.host'),
       config.get('fluentbit.port'),
+      config.get('fluentbit.application'),
       config.get('fluentbit.disabled'),
     ),
   });

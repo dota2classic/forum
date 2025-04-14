@@ -178,6 +178,7 @@ export class ForumService {
     return [items, count.count, cursor];
   }
 
+  @measure('getOrCreateThread')
   async getOrCreateThread(
     threadType: ThreadType,
     externalId: string,
