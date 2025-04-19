@@ -11,7 +11,7 @@ import { ThreadType } from '../../gateway/shared-types/thread-type';
 import { VirtualColumn2 } from '../../util/virtual-column';
 
 @Entity()
-@Index('external_id_thread_type_index', ['external_id', 'thread_type'], {
+@Index('external_id_thread_type_index', ['thread_type', 'external_id'], {
   unique: true,
 })
 export class ThreadEntity {

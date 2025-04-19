@@ -210,38 +210,38 @@ export class ForumService {
     threadType?: ThreadType,
   ): Promise<[ThreadEntity[], number]> {
     const count: { cnt: number }[] = await this.threadEntityRepository.query(
-      `WITH "thread_stats" AS (select me.thread_id,
-                               count(me)                                                    AS "message_count",
-                               sum(("me"."created_at" >= NOW() - '8 hours'::interval)::int) AS "new_message_count"
-                        from message_entity me
-                        group by 1)
-SELECT COUNT(DISTINCT ("ts"."thread_id"))::int AS "cnt"
+      `
+SELECT COUNT(DISTINCT te.id)::int AS "cnt"
 from thread_entity te
-         left join thread_stats ts on ts.thread_id = te.id
+${opSteamId === undefined ? '' : 'inner join last_message_view op on op.thread_id = te.id and op.is_last = false and op.author = $2'}
 where te.thread_type = $1`,
-      [threadType],
+      [threadType, ...(opSteamId ? [opSteamId] : [])],
     );
 
     const ids: { id: string; pinned: boolean; created_at: string }[] =
       await this.messageEntityRepository.query(
         `
-SELECT DISTINCT thread_seq.id, thread_seq.pinned, thread_seq.created_at FROM 
-(WITH "thread_stats" AS (select me.thread_id,
-         count(me)                                                    AS "message_count",
-         sum(("me"."created_at" >= NOW() - '8 hours'::interval)::int) AS "new_message_count"
-    from message_entity me
-    group by 1
-  )
-SELECT te.id, te.pinned, lm.created_at
-from thread_entity te
-         left join thread_stats ts on ts.thread_id = te.id
-         left join last_message_view lm on lm.thread_id = te.id and lm.is_last = true
-         ${opSteamId === undefined ? '' : `left join last_message_view op on op.thread_id = te.id and op.is_last = false`}
-where te.thread_type = $1${opSteamId === undefined ? '' : ` and op.author = $4`}
-) thread_seq
-order by thread_seq.pinned DESC, thread_seq.created_at DESC
-offset $2
-limit $3`,
+    SELECT DISTINCT thread_seq.id,
+                thread_seq.pinned,
+                thread_seq.created_at
+FROM
+  (WITH last_messages AS
+     (SELECT me.thread_id AS thread_id,
+             max(me.created_at) AS created_at
+      FROM message_entity me
+      WHERE me.deleted = FALSE
+      GROUP BY 1) SELECT te.id,
+                         te.pinned,
+                         lm.created_at
+   FROM thread_entity te
+   LEFT JOIN last_messages lm ON lm.thread_id = te.id
+   ${opSteamId === undefined ? '' : 'inner join last_message_view op on op.thread_id = te.id and op.is_last = false and op.author = $4'}
+   WHERE te.thread_type = $1) thread_seq
+ORDER BY thread_seq.pinned DESC,
+         thread_seq.created_at DESC
+OFFSET $2
+LIMIT $3
+    `,
         [
           threadType,
           perPage * page,
