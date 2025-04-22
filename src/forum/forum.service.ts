@@ -197,9 +197,20 @@ export class ForumService {
       t.thread_type = threadType;
       t.title = title;
       await this.threadEntityRepository.save(t);
+    } else {
+      return t;
     }
 
     return q.getOneOrFail();
+  }
+
+  @measure('getThread(id)')
+  getThread(id: string): Promise<ThreadEntity> {
+    return this.getThreadBaseQuery(false)
+      .where({
+        id,
+      })
+      .getOneOrFail();
   }
 
   @measure('getThreadPage')
@@ -260,15 +271,6 @@ LIMIT $3
             .getMany();
 
     return [realThreads, count[0].cnt];
-  }
-
-  @measure('getThread(id)')
-  getThread(id: string): Promise<ThreadEntity> {
-    return this.getThreadBaseQuery(false)
-      .where({
-        id,
-      })
-      .getOneOrFail();
   }
 
   // Probably very bad cause constant locking. Need to implement via stacking queue or something.
