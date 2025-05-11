@@ -2,7 +2,8 @@ import { ViewColumn, ViewEntity } from 'typeorm';
 import { Message } from './message';
 
 @ViewEntity({
-  name: 'last_message_view',
+  name: 'last_message_view_materialized',
+  materialized: true,
   expression: `with latest as (select max(me.created_at) as msg_date, me.thread_id, true as last
                 from message_entity me
                 where me.deleted = false

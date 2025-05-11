@@ -17,6 +17,7 @@ import configuration from './configuration';
 import { S3ModuleOptions } from 'nestjs-s3/dist/s3.interfaces';
 import { MessageService } from './forum/message.service';
 import { getTypeormConfig } from './config/typeorm.config';
+import { ThreadStatsService } from './forum/thread-stats.service';
 
 @Module({
   imports: [
@@ -33,7 +34,7 @@ import { getTypeormConfig } from './config/typeorm.config';
           database: 'postgres',
           migrations: ['dist/database/migrations/*.*'],
           migrationsRun: true,
-          // maxQueryExecutionTime: 150,
+          // maxQueryExecutionTime: 50,
           logging: undefined,
         } satisfies TypeOrmModuleOptions;
       },
@@ -68,6 +69,7 @@ import { getTypeormConfig } from './config/typeorm.config';
     AppService,
     EmoticonService,
     MessageService,
+    ThreadStatsService,
   ],
 })
 export class AppModule {}

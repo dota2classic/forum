@@ -18,6 +18,7 @@ import { Role } from '../gateway/shared-types/roles';
 import { LastMessageView } from './model/last-message.view';
 import { measure } from '../util/measure';
 import { ForumSqlFactory } from './forum-sql.factory';
+import { ThreadStatsView } from './model/thread-stats.view';
 
 @Injectable()
 export class ForumService {
@@ -288,15 +289,7 @@ LIMIT $3
   private getThreadBaseQuery(withLastMessage: boolean = true) {
     let baseQuery = this.threadEntityRepository
       .createQueryBuilder('te')
-      .addCommonTableExpression(
-        `select me.thread_id,
-           count(me)                                                    AS "message_count",
-           sum(("me"."created_at" >= NOW() - '8 hours'::interval)::int) AS "new_message_count"
-    from message_entity me
-    group by 1`,
-        'thread_stats',
-      )
-      .leftJoin('thread_stats', 'ts', 'ts.thread_id = te.id')
+      .leftJoin(ThreadStatsView, 'ts', 'ts.thread_id = te.id')
       .addSelect('ts.message_count', 'messageCount')
       .addSelect(`ts.new_message_count`, 'newMessageCount')
 
@@ -317,7 +310,7 @@ LIMIT $3
       return baseQuery
         .leftJoinAndMapOne(
           'te.lastMessage',
-          'last_message_view',
+          LastMessageView,
           'lm',
           `lm.thread_id = te.id and lm.is_last = true`,
         )
