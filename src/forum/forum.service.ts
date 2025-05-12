@@ -225,7 +225,7 @@ export class ForumService {
       `
 SELECT COUNT(DISTINCT te.id)::int AS "cnt"
 from thread_entity te
-${opSteamId === undefined ? '' : 'inner join last_message_view op on op.thread_id = te.id and op.is_last = false and op.author = $2'}
+${opSteamId === undefined ? '' : 'inner join last_message_view_materialized op on op.thread_id = te.id and op.is_last = false and op.author = $2'}
 where te.thread_type = $1`,
       [threadType, ...(opSteamId ? [opSteamId] : [])],
     );
@@ -247,7 +247,7 @@ FROM
                          lm.created_at
    FROM thread_entity te
    LEFT JOIN last_messages lm ON lm.thread_id = te.id
-   ${opSteamId === undefined ? '' : 'inner join last_message_view op on op.thread_id = te.id and op.is_last = false and op.author = $4'}
+   ${opSteamId === undefined ? '' : 'inner join last_message_view_materialized op on op.thread_id = te.id and op.is_last = false and op.author = $4'}
    WHERE te.thread_type = $1) thread_seq
 ORDER BY thread_seq.pinned DESC,
          thread_seq.created_at DESC
