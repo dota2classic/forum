@@ -251,6 +251,13 @@ export class ForumController {
     return msg;
   }
 
+  @Get('message/:id')
+  public async getMessage(@Param('id') messageId: string): Promise<MessageDTO> {
+    return await this.messageService
+      .getMessage(messageId)
+      .then(this.mapper.mapMessage);
+  }
+
   @Patch('thread/:id')
   async updateThread(
     @Param('id') id: string,

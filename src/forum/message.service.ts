@@ -19,6 +19,10 @@ export class MessageService {
     private readonly reactionEntityRepository: Repository<ReactionEntity>,
   ) {}
 
+  public async getMessage(id: string) {
+    return this.fullMessage(id);
+  }
+
   public async toggleReaction(
     messageId: string,
     author: string,
