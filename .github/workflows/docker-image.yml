@@ -2,7 +2,7 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "k8s" ]
   pull_request:
     branches: [ "master" ]
 
@@ -20,4 +20,4 @@ jobs:
         uses: docker/build-push-action@v6.7.0
         with:
           push: true
-          tags: dota2classic/matchmaking:forum
+          tags: dota2classic/forum:k8s
