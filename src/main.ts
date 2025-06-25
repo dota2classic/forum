@@ -7,6 +7,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import configuration from './configuration';
 import { ConfigService } from '@nestjs/config';
 import { WinstonWrapper } from '@dota2classic/nest_logger';
+import { CatchEverythingFilter } from './provide/typeorm-error-filter';
 
 async function bootstrap() {
   await otelSDK.start();
@@ -21,6 +22,8 @@ async function bootstrap() {
       config.get('fluentbit.disabled'),
     ),
   });
+
+  app.useGlobalFilters(new CatchEverythingFilter());
 
   app.connectMicroservice({
     transport: Transport.REDIS,

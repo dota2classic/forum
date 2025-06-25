@@ -85,6 +85,6 @@ export class MessageService {
       .where('me.id = :id', { id })
       .leftJoinAndSelect('me.reactions', 'reactions', 'reactions.active')
       .leftJoinAndSelect('me.reply', 'reply', 'not reply.deleted')
-      .getOneOrFail();
+      .getOne();
   }
 }

@@ -45,7 +45,7 @@ export class ForumService {
   ): Promise<MessageEntity> {
     await this.checkUserForWrite(authorSteamId);
 
-    let thread: ThreadEntity = await this.threadEntityRepository.findOneOrFail({
+    let thread: ThreadEntity = await this.threadEntityRepository.findOne({
       where: {
         id: threadId,
       },
@@ -202,7 +202,7 @@ export class ForumService {
       return t;
     }
 
-    return q.getOneOrFail();
+    return q.getOne();
   }
 
   @measure('getThread(id)')
