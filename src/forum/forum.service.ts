@@ -207,7 +207,7 @@ export class ForumService {
         id,
       })
       .getOne()
-      .catch(() => throw new HttpException("Thread not found", 404))
+      .catch(() => throw new HttpException("Thread not found", 404));
   }
 
   @measure('getThreadPage')
