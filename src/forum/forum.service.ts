@@ -1,9 +1,4 @@
-import {
-  ConflictException,
-  ForbiddenException,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { ConflictException, ForbiddenException, HttpException, Injectable, Logger } from '@nestjs/common';
 import { MessageEntity } from './model/message.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Connection, DataSource, Repository } from 'typeorm';
@@ -211,7 +206,8 @@ export class ForumService {
       .where({
         id,
       })
-      .getOneOrFail();
+      .getOne()
+      .catch(() => throw new HttpException("Thread not found", 404))
   }
 
   @measure('getThreadPage')
