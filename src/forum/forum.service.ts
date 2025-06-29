@@ -1,4 +1,10 @@
-import { ConflictException, ForbiddenException, HttpException, Injectable, Logger } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  HttpException,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { MessageEntity } from './model/message.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Connection, DataSource, Repository } from 'typeorm';
@@ -202,12 +208,15 @@ export class ForumService {
 
   @measure('getThread(id)')
   getThread(id: string): Promise<ThreadEntity> {
-    return this.getThreadBaseQuery(false)
+    const thread = this.getThreadBaseQuery(false)
       .where({
         id,
       })
-      .getOne()
-      .catch(() => throw new HttpException("Thread not found", 404));
+      .getOne();
+    if (!thread) {
+      throw new HttpException('Thread not found', 404);
+    }
+    return thread;
   }
 
   @measure('getThreadPage')
