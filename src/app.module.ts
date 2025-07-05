@@ -18,6 +18,8 @@ import { S3ModuleOptions } from 'nestjs-s3/dist/s3.interfaces';
 import { MessageService } from './forum/message.service';
 import { getTypeormConfig } from './config/typeorm.config';
 import { ThreadStatsService } from './forum/thread-stats.service';
+import { ClientsModule, RmqOptions, Transport } from '@nestjs/microservices';
+import { RabbitMQConfig, RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 
 @Module({
   imports: [
@@ -44,6 +46,45 @@ import { ThreadStatsService } from './forum/thread-stats.service';
     TypeOrmModule.forFeature(Entities),
     CqrsModule,
     RedisClient(),
+    ClientsModule.registerAsync([
+      {
+        name: 'RabbitMQ',
+        useFactory(config: ConfigService): RmqOptions {
+          return {
+            transport: Transport.RMQ,
+            options: {
+              urls: [
+                {
+                  hostname: config.get<string>('rabbitmq.host'),
+                  port: config.get<number>('rabbitmq.port'),
+                  protocol: 'amqp',
+                  username: config.get<string>('rabbitmq.user'),
+                  password: config.get<string>('rabbitmq.password'),
+                },
+              ],
+              prefetchCount: 5,
+            },
+          };
+        },
+        inject: [ConfigService],
+        imports: [],
+      },
+    ]),
+    RabbitMQModule.forRootAsync({
+      useFactory(config: ConfigService): RabbitMQConfig {
+        return {
+          exchanges: [
+            {
+              name: 'forum_message_exchange',
+              type: 'topic',
+            },
+          ],
+          uri: `amqp://${config.get('rabbitmq.user')}:${config.get('rabbitmq.password')}@${config.get('rabbitmq.host')}:${config.get('rabbitmq.port')}`,
+        };
+      },
+      imports: [],
+      inject: [ConfigService],
+    }),
     S3Module.forRootAsync({
       useFactory(config: ConfigService): S3ModuleOptions {
         return {

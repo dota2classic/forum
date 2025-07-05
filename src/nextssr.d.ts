@@ -1,3 +1,6 @@
+import { ConfigurableModuleAsyncOptions } from '@nestjs/common/module-utils/interfaces/configurable-module-async-options.interface';
+import { DynamicModule } from '@nestjs/common';
+
 export {};
 
 declare global {
@@ -33,5 +36,17 @@ declare global {
         Promise<G>,
       ],
     ): Promise<[A, B, C, D, E, F, G]>;
+  }
+}
+
+declare module '@golevelup/nestjs-rabbitmq' {
+  interface RabbitMQModule {
+    // You can extend instance methods here if needed
+  }
+
+  namespace RabbitMQModule {
+    function forRootAsync(
+      options: ConfigurableModuleAsyncOptions<any>,
+    ): DynamicModule;
   }
 }

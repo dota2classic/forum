@@ -55,7 +55,6 @@ export class ForumController {
     private readonly mapper: ForumMapper,
     private readonly messageService: MessageService,
     private readonly emoticonService: EmoticonService,
-
     private readonly ebus: EventBus,
   ) {}
 
