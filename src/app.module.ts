@@ -75,7 +75,7 @@ import { RabbitMQConfig, RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
         return {
           exchanges: [
             {
-              name: 'forum_message_exchange',
+              name: 'app.events',
               type: 'topic',
             },
           ],
