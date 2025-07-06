@@ -27,7 +27,7 @@ export class AppService implements OnApplicationBootstrap {
       .pipe(ofType(MessageUpdatedEvent))
       .subscribe((msg) =>
         this.amqpConnection.publish(
-          'forum_message_exchange',
+          'app.events',
           MessageUpdatedEvent.name,
           msg,
         ),
