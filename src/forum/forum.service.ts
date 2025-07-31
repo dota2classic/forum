@@ -20,10 +20,13 @@ import { LastMessageView } from './model/last-message.view';
 import { measure } from '../util/measure';
 import { ForumSqlFactory } from './forum-sql.factory';
 import { ThreadStatsView } from './model/thread-stats.view';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class ForumService {
   private logger = new Logger(ForumService.name);
+
+  private threadViewMap = new Map<string, number>();
 
   constructor(
     @InjectRepository(MessageEntity)
@@ -35,6 +38,8 @@ export class ForumService {
     private dataSource: DataSource,
     private connection: Connection,
     private readonly ebus: EventBus,
+    @InjectRepository(ThreadStatsView)
+    private readonly threadStatsViewRepository: Repository<ThreadStatsView>,
   ) {}
 
   async postMessage(
@@ -137,12 +142,25 @@ export class ForumService {
     cursor: string | undefined,
     order: SortOrder = SortOrder.ASC,
   ): Promise<[MessageEntity[], number, string]> {
-    // Total message count
-    const [count] = await this.dataSource.query<
-      {
-        count: number;
-      }[]
-    >(ForumSqlFactory.getThreadMessageCountRequest(), [thread_id]);
+    // Quick lookup
+    let count = await this.threadStatsViewRepository
+      .findOne({
+        where: {
+          threadId: thread_id,
+        },
+      })
+      .then((t) => (t ? { count: t.messageCount } : undefined));
+
+    if (!count) {
+      // Total message count
+      count = await this.dataSource
+        .query<
+          {
+            count: number;
+          }[]
+        >(ForumSqlFactory.getThreadMessageCountRequest(), [thread_id])
+        .then((t) => t[0]);
+    }
 
     if (page === -1) {
       page = Math.max(0, Math.ceil(count.count / perPage) - 1);
@@ -281,14 +299,21 @@ LIMIT $3
 
   // Probably very bad cause constant locking. Need to implement via stacking queue or something.
   public async threadView(id: string) {
-    await this.threadEntityRepository
-      .createQueryBuilder()
-      .update(ThreadEntity)
-      .set({
-        views: () => 'views + 1',
-      })
-      .where({ id })
-      .execute();
+    this.threadViewMap.set(id, (this.threadViewMap.get(id) || 0) + 1);
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  public async saveThreadViews() {
+    Array.from(this.threadViewMap.entries()).map(([threadId, views]) =>
+      this.threadEntityRepository
+        .createQueryBuilder()
+        .update(ThreadEntity)
+        .set({
+          views: () => `views + ${views}`,
+        })
+        .where({ id: threadId })
+        .execute(),
+    );
   }
 
   private getThreadBaseQuery(withLastMessage: boolean = true) {
