@@ -304,16 +304,24 @@ LIMIT $3
 
   @Cron(CronExpression.EVERY_MINUTE)
   public async saveThreadViews() {
-    Array.from(this.threadViewMap.entries()).map(([threadId, views]) =>
-      this.threadEntityRepository
-        .createQueryBuilder()
-        .update(ThreadEntity)
-        .set({
-          views: () => `views + ${views}`,
-        })
-        .where({ id: threadId })
-        .execute(),
+    const jobs = Array.from(this.threadViewMap.entries()).map(
+      ([threadId, views]) =>
+        this.threadEntityRepository
+          .createQueryBuilder()
+          .update(ThreadEntity)
+          .set({
+            views: () => `views + ${views}`,
+          })
+          .where({ id: threadId })
+          .execute(),
     );
+    await Promise.all(jobs)
+      .catch((e) => {
+        this.logger.error('There was an issue saving thread views!', e);
+      })
+      .then(() => {
+        this.threadViewMap.clear();
+      });
   }
 
   private getThreadBaseQuery(withLastMessage: boolean = true) {
