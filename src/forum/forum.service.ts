@@ -320,6 +320,9 @@ LIMIT $3
         this.logger.error('There was an issue saving thread views!', e);
       })
       .then(() => {
+        this.logger.log(
+          `ThreadViews updated for ${Array.from(this.threadViewMap.keys()).length}`,
+        );
         this.threadViewMap.clear();
       });
   }
