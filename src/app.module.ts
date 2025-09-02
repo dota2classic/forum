@@ -19,9 +19,11 @@ import { MessageService } from './forum/message.service';
 import { getTypeormConfig } from './config/typeorm.config';
 import { ThreadStatsService } from './forum/thread-stats.service';
 import { RabbitMQConfig, RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     TerminusModule,
     ConfigModule.forRoot({
       isGlobal: true,
