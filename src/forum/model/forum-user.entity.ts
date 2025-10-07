@@ -9,4 +9,10 @@ export class ForumUserEntity {
 
   @Column({ type: 'timestamptz' })
   muted_until: Date;
+
+  @Column({
+    name: 'toxic_counter',
+    default: 0,
+  })
+  toxicCounter: number;
 }

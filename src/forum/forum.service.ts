@@ -21,6 +21,7 @@ import { measure } from '../util/measure';
 import { ForumSqlFactory } from './forum-sql.factory';
 import { ThreadStatsView } from './model/thread-stats.view';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { ForumMapper } from './forum.mapper';
 
 @Injectable()
 export class ForumService {
@@ -38,6 +39,7 @@ export class ForumService {
     private dataSource: DataSource,
     private connection: Connection,
     private readonly ebus: EventBus,
+    private readonly mapper: ForumMapper,
     @InjectRepository(ThreadStatsView)
     private readonly threadStatsViewRepository: Repository<ThreadStatsView>,
   ) {}
@@ -374,6 +376,10 @@ LIMIT $3
         .where({ id })
         .execute()
     ).raw;
+
+    this.ebus.publish(
+      this.mapper.mapMessageToEvent(this.mapper.mapMessage(some[0])),
+    );
 
     return some[0];
   }

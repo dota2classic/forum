@@ -20,6 +20,8 @@ import { getTypeormConfig } from './config/typeorm.config';
 import { ThreadStatsService } from './forum/thread-stats.service';
 import { RabbitMQConfig, RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import { ScheduleModule } from '@nestjs/schedule';
+import { GptService } from './service/gpt.service';
+import { MessageModerationService } from './service/message-moderation.service';
 
 @Module({
   imports: [
@@ -89,6 +91,8 @@ import { ScheduleModule } from '@nestjs/schedule';
     EmoticonService,
     MessageService,
     ThreadStatsService,
+    GptService,
+    MessageModerationService,
   ],
 })
 export class AppModule {}
