@@ -69,7 +69,7 @@ export class GptService {
   ): Promise<ValidationResult> {
     try {
       const input = {
-        messages: messages.map((msg) => ({ id: msg.id, text: msg.content })),
+        messages: messages.map((msg, idx) => ({ id: idx, text: msg.content })),
       };
 
       const request: CompletionRequest = {
@@ -93,7 +93,13 @@ export class GptService {
       );
 
       if (res.ok) {
-        return JSON.parse(res.data.choices[0].message.content);
+        const result = JSON.parse(
+          res.data.choices[0].message.content,
+        ) as ValidationResult;
+        for (let msg of result.results) {
+          msg.id = messages[Number(msg.id)].id;
+        }
+        return result;
       }
 
       return {
