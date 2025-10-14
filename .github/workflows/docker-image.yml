@@ -11,6 +11,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Set short SHA
+        id: vars
+        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
@@ -20,4 +23,6 @@ jobs:
         uses: docker/build-push-action@v6.7.0
         with:
           push: true
-          tags: dota2classic/forum:k8s
+          tags: |
+            dota2classic/forum:k8s-${{ env.SHORT_SHA }}
+            dota2classic/forum:k8s-latest
