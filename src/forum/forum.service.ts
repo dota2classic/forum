@@ -1,6 +1,7 @@
 import {
   ConflictException,
   ForbiddenException,
+  HttpException,
   Injectable,
   Logger,
 } from '@nestjs/common';
@@ -19,10 +20,14 @@ import { LastMessageView } from './model/last-message.view';
 import { measure } from '../util/measure';
 import { ForumSqlFactory } from './forum-sql.factory';
 import { ThreadStatsView } from './model/thread-stats.view';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { ForumMapper } from './forum.mapper';
 
 @Injectable()
 export class ForumService {
   private logger = new Logger(ForumService.name);
+
+  private threadViewMap = new Map<string, number>();
 
   constructor(
     @InjectRepository(MessageEntity)
@@ -34,6 +39,9 @@ export class ForumService {
     private dataSource: DataSource,
     private connection: Connection,
     private readonly ebus: EventBus,
+    private readonly mapper: ForumMapper,
+    @InjectRepository(ThreadStatsView)
+    private readonly threadStatsViewRepository: Repository<ThreadStatsView>,
   ) {}
 
   async postMessage(
@@ -45,7 +53,7 @@ export class ForumService {
   ): Promise<MessageEntity> {
     await this.checkUserForWrite(authorSteamId);
 
-    let thread: ThreadEntity = await this.threadEntityRepository.findOneOrFail({
+    let thread: ThreadEntity = await this.threadEntityRepository.findOne({
       where: {
         id: threadId,
       },
@@ -136,12 +144,25 @@ export class ForumService {
     cursor: string | undefined,
     order: SortOrder = SortOrder.ASC,
   ): Promise<[MessageEntity[], number, string]> {
-    // Total message count
-    const [count] = await this.dataSource.query<
-      {
-        count: number;
-      }[]
-    >(ForumSqlFactory.getThreadMessageCountRequest(), [thread_id]);
+    // Quick lookup
+    let count = await this.threadStatsViewRepository
+      .findOne({
+        where: {
+          threadId: thread_id,
+        },
+      })
+      .then((t) => (t ? { count: t.messageCount } : undefined));
+
+    if (!count) {
+      // Total message count
+      count = await this.dataSource
+        .query<
+          {
+            count: number;
+          }[]
+        >(ForumSqlFactory.getThreadMessageCountRequest(), [thread_id])
+        .then((t) => t[0]);
+    }
 
     if (page === -1) {
       page = Math.max(0, Math.ceil(count.count / perPage) - 1);
@@ -202,16 +223,20 @@ export class ForumService {
       return t;
     }
 
-    return q.getOneOrFail();
+    return q.getOne();
   }
 
   @measure('getThread(id)')
   getThread(id: string): Promise<ThreadEntity> {
-    return this.getThreadBaseQuery(false)
+    const thread = this.getThreadBaseQuery(false)
       .where({
         id,
       })
-      .getOneOrFail();
+      .getOne();
+    if (!thread) {
+      throw new HttpException('Thread not found', 404);
+    }
+    return thread;
   }
 
   @measure('getThreadPage')
@@ -276,14 +301,32 @@ LIMIT $3
 
   // Probably very bad cause constant locking. Need to implement via stacking queue or something.
   public async threadView(id: string) {
-    await this.threadEntityRepository
-      .createQueryBuilder()
-      .update(ThreadEntity)
-      .set({
-        views: () => 'views + 1',
+    this.threadViewMap.set(id, (this.threadViewMap.get(id) || 0) + 1);
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  public async saveThreadViews() {
+    const jobs = Array.from(this.threadViewMap.entries()).map(
+      ([threadId, views]) =>
+        this.threadEntityRepository
+          .createQueryBuilder()
+          .update(ThreadEntity)
+          .set({
+            views: () => `views + ${views}`,
+          })
+          .where({ id: threadId })
+          .execute(),
+    );
+    await Promise.all(jobs)
+      .catch((e) => {
+        this.logger.error('There was an issue saving thread views!', e);
       })
-      .where({ id })
-      .execute();
+      .then(() => {
+        this.logger.log(
+          `ThreadViews updated for ${Array.from(this.threadViewMap.keys()).length}`,
+        );
+        this.threadViewMap.clear();
+      });
   }
 
   private getThreadBaseQuery(withLastMessage: boolean = true) {
@@ -333,6 +376,10 @@ LIMIT $3
         .where({ id })
         .execute()
     ).raw;
+
+    this.ebus.publish(
+      this.mapper.mapMessageToEvent(this.mapper.mapMessage(some[0])),
+    );
 
     return some[0];
   }

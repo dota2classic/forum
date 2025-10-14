@@ -55,7 +55,6 @@ export class ForumController {
     private readonly mapper: ForumMapper,
     private readonly messageService: MessageService,
     private readonly emoticonService: EmoticonService,
-
     private readonly ebus: EventBus,
   ) {}
 
@@ -246,9 +245,7 @@ export class ForumController {
 
   @Delete('message/:id')
   async deleteMessage(@Param('id') id: string): Promise<MessageDTO> {
-    const msg = await this.fs.deleteMessage(id).then(this.mapper.mapMessage);
-    await this.messageUpdated(msg);
-    return msg;
+    return this.fs.deleteMessage(id).then(this.mapper.mapMessage);
   }
 
   @Get('message/:id')

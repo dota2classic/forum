@@ -18,9 +18,14 @@ import { S3ModuleOptions } from 'nestjs-s3/dist/s3.interfaces';
 import { MessageService } from './forum/message.service';
 import { getTypeormConfig } from './config/typeorm.config';
 import { ThreadStatsService } from './forum/thread-stats.service';
+import { RabbitMQConfig, RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
+import { ScheduleModule } from '@nestjs/schedule';
+import { GptService } from './service/gpt.service';
+import { MessageModerationService } from './service/message-moderation.service';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     TerminusModule,
     ConfigModule.forRoot({
       isGlobal: true,
@@ -44,6 +49,22 @@ import { ThreadStatsService } from './forum/thread-stats.service';
     TypeOrmModule.forFeature(Entities),
     CqrsModule,
     RedisClient(),
+    RabbitMQModule.forRootAsync({
+      useFactory(config: ConfigService): RabbitMQConfig {
+        return {
+          exchanges: [
+            {
+              name: 'app.events',
+              type: 'topic',
+            },
+          ],
+          enableControllerDiscovery: true,
+          uri: `amqp://${config.get('rabbitmq.user')}:${config.get('rabbitmq.password')}@${config.get('rabbitmq.host')}:${config.get('rabbitmq.port')}`,
+        };
+      },
+      imports: [],
+      inject: [ConfigService],
+    }),
     S3Module.forRootAsync({
       useFactory(config: ConfigService): S3ModuleOptions {
         return {
@@ -70,6 +91,8 @@ import { ThreadStatsService } from './forum/thread-stats.service';
     EmoticonService,
     MessageService,
     ThreadStatsService,
+    GptService,
+    MessageModerationService,
   ],
 })
 export class AppModule {}
