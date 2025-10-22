@@ -1,8 +1,8 @@
-name: Docker Image CI
+name: Build
 
 on:
   push:
-    branches: [ "master", "k8s" ]
+    branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
 
