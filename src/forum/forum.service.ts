@@ -17,7 +17,6 @@ import { didExpire } from '../gateway/util/expired';
 import { UserMutedException } from './exception/UserMutedException';
 import { Role } from '../gateway/shared-types/roles';
 import { LastMessageView } from './model/last-message.view';
-import { measure } from '../util/measure';
 import { ForumSqlFactory } from './forum-sql.factory';
 import { ThreadStatsView } from './model/thread-stats.view';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -92,7 +91,6 @@ export class ForumService {
     });
   }
 
-  @measure('getMessagesCursor')
   public async getMessagesNew(
     threadId: string,
     limit: number,
@@ -122,7 +120,6 @@ export class ForumService {
     return query.take(limit).getMany();
   }
 
-  @measure('getLatestPage')
   public async getLatestPage(
     thread_id: string,
     perPage: number,
@@ -136,7 +133,6 @@ export class ForumService {
     );
   }
 
-  @measure('getMessagesPage')
   async getMessagesPage(
     thread_id: string,
     page: number,
@@ -200,7 +196,6 @@ export class ForumService {
     return [items, count.count, cursor];
   }
 
-  @measure('getOrCreateThread')
   async getOrCreateThread(
     threadType: ThreadType,
     externalId: string,
@@ -226,7 +221,6 @@ export class ForumService {
     return q.getOne();
   }
 
-  @measure('getThread(id)')
   getThread(id: string): Promise<ThreadEntity> {
     const thread = this.getThreadBaseQuery(false)
       .where({
@@ -239,7 +233,6 @@ export class ForumService {
     return thread;
   }
 
-  @measure('getThreadPage')
   public async getThreadPage(
     page: number,
     perPage: number,
@@ -299,8 +292,7 @@ LIMIT $3
     return [realThreads, count[0].cnt];
   }
 
-  // Probably very bad cause constant locking. Need to implement via stacking queue or something.
-  public async threadView(id: string) {
+  public threadView(id: string) {
     this.threadViewMap.set(id, (this.threadViewMap.get(id) || 0) + 1);
   }
 

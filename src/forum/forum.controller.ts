@@ -310,8 +310,6 @@ export class ForumController {
   }
 
   private threadView(id: string) {
-    this.fs
-      .threadView(id)
-      .then(() => this.logger.log('Thread view registered'));
+    this.fs.threadView(id);
   }
 }
