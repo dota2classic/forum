@@ -22,6 +22,8 @@ import { RabbitMQConfig, RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import { ScheduleModule } from '@nestjs/schedule';
 import { GptService } from './service/gpt.service';
 import { MessageModerationService } from './service/message-moderation.service';
+import { RedlockModule } from '@dota2classic/redlock';
+import { RedlockModuleOptions } from '@dota2classic/redlock/dist/redlock.module-definition';
 
 @Module({
   imports: [
@@ -64,6 +66,22 @@ import { MessageModerationService } from './service/message-moderation.service';
       },
       imports: [],
       inject: [ConfigService],
+    }),
+    RedlockModule.registerAsync({
+      imports: [],
+      inject: [ConfigService],
+      useFactory(config: ConfigService): RedlockModuleOptions {
+        return {
+          host: config.get('redis.host'),
+          password: config.get('redis.password'),
+          port: parseInt(config.get('redis.port')) || 6379,
+          options: {
+            driftFactor: 0.01,
+            retryCount: 10,
+            automaticExtensionThreshold: 500,
+          },
+        };
+      },
     }),
     S3Module.forRootAsync({
       useFactory(config: ConfigService): S3ModuleOptions {

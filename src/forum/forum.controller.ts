@@ -86,8 +86,8 @@ export class ForumController {
     @Query('threadType') threadType?: ThreadType,
   ): Promise<ThreadPageDto> {
     const [threads, cnt] = await this.fs.getThreadPage(
-      page,
-      perPage,
+      Math.max(0, page),
+      perPage <= 0 ? 25 : perPage,
       steamId,
       threadType,
     );
@@ -202,8 +202,8 @@ export class ForumController {
     this.threadView(id);
     const [msgs, cnt] = await this.fs.getMessagesPage(
       id,
-      page,
-      perPage,
+      Math.max(0, page),
+      perPage <= 0 ? 25 : perPage,
       cursor,
     );
     return makePage(msgs, cnt, page, perPage, this.mapper.mapMessage);

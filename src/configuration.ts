@@ -1,12 +1,62 @@
-import { readFileSync } from 'fs';
-import * as yaml from 'js-yaml';
-import { join } from 'path';
+export interface ExpectedConfig {
+  redis: {
+    host: string;
+    password: string;
+  };
+  s3: {
+    accessKeyId: string;
+    accessKeySecret: string;
+    endpoint: string;
+  };
+  postgres: {
+    host: string;
+    port: number;
+    username: string;
+    password: string;
+  };
+  fluentbit: {
+    host: string;
+    port: number;
+  };
+  telemetry: {
+    jaeger: {
+      url: string;
+    };
+  };
+}
 
-const YAML_CONFIG_FILENAME = 'config.yaml';
-
-export default (filename = YAML_CONFIG_FILENAME) => {
-  return yaml.load(readFileSync(join('./', filename), 'utf8')) as Record<
-    string,
-    any
-  >;
+export default (): ExpectedConfig => {
+  return {
+    redis: {
+      host: process.env.REDIS_HOST,
+      password: process.env.REDIS_PASSWORD,
+    },
+    s3: {
+      accessKeyId: process.env.S3_ACCESS_KEY_ID || '',
+      accessKeySecret: process.env.S3_ACCESS_KEY_SECRET || '',
+      endpoint: process.env.S3_ENDPOINT || '',
+    },
+    postgres: {
+      host: process.env.POSTGRES_HOST,
+      port: parseInt(process.env.POSTGRES_PORT || '5432'),
+      username: process.env.POSTGRES_USERNAME,
+      password: process.env.POSTGRES_PASSWORD,
+    },
+    fluentbit: {
+      application: process.env.APP_NAME,
+      host: process.env.FLUENTBIT_HOST,
+      port: parseInt(process.env.FLUENTBIT_PORT) || 24224,
+    },
+    rabbitmq: {
+      host: process.env.RABBITMQ_HOST,
+      port: process.env.RABBITMQ_PORT,
+      user: process.env.RABBITMQ_USER,
+      password: process.env.RABBITMQ_PASSWORD,
+    },
+    telemetry: {
+      jaeger: {
+        url: process.env.JAEGER_URL || 'http://localhost:4317',
+      },
+    },
+  } as ExpectedConfig;
 };
