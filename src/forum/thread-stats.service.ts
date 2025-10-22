@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ThreadEntity } from './model/thread.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -6,7 +6,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import Redlock from 'redlock';
 
 @Injectable()
-export class ThreadStatsService implements OnApplicationBootstrap {
+export class ThreadStatsService {
   private logger = new Logger(ThreadStatsService.name);
 
   constructor(
@@ -33,9 +33,5 @@ export class ThreadStatsService implements OnApplicationBootstrap {
         this.logger.log('Updated views');
       },
     );
-  }
-
-  async onApplicationBootstrap() {
-    await this.refreshView();
   }
 }
