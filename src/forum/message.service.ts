@@ -60,6 +60,7 @@ export class MessageService {
     content: string,
     authorSteamId: string,
   ) {
+    await this.checkUserForWrite(authorSteamId);
     const msg = await this.messageEntityRepository.findOne({
       where: {
         id: messageId,
