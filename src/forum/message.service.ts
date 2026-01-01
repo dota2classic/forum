@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EventBus } from '@nestjs/cqrs';
 import { ReactionEntity } from './model/reaction.entity';
+import { ForumService } from './forum.service';
 
 @Injectable()
 export class MessageService {
@@ -17,6 +18,7 @@ export class MessageService {
     private readonly ebus: EventBus,
     @InjectRepository(ReactionEntity)
     private readonly reactionEntityRepository: Repository<ReactionEntity>,
+    private readonly fs: ForumService,
   ) {}
 
   public async getMessage(id: string) {
@@ -60,7 +62,7 @@ export class MessageService {
     content: string,
     authorSteamId: string,
   ) {
-    await this.checkUserForWrite(authorSteamId);
+    await this.fs.checkUserForWrite(authorSteamId);
     const msg = await this.messageEntityRepository.findOne({
       where: {
         id: messageId,
