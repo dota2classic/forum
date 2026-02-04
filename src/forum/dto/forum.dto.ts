@@ -60,6 +60,7 @@ export class ThreadDTO {
   readonly originalPoster?: string;
 
   readonly lastMessage?: MessageDTO;
+  readonly pinnedMessage?: MessageDTO;
 }
 
 export class ThreadPageDto extends Page<ThreadDTO, string> {

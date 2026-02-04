@@ -1,4 +1,3 @@
-import { otelSDK } from './tracer';
 import './util/promise-combine';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
@@ -9,9 +8,9 @@ import { ConfigService } from '@nestjs/config';
 import { WinstonWrapper } from '@dota2classic/nest_logger';
 import { CatchEverythingFilter } from './provide/typeorm-error-filter';
 
-async function bootstrap() {
-  await otelSDK.start();
+require('dotenv').config();
 
+async function bootstrap() {
   const config = new ConfigService(configuration());
 
   const app = await NestFactory.create(AppModule, {

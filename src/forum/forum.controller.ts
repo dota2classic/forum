@@ -248,6 +248,11 @@ export class ForumController {
     return this.fs.deleteMessage(id).then(this.mapper.mapMessage);
   }
 
+  @Post('message/:id/pin')
+  async pinMessage(@Param('id') id: string) {
+    await this.fs.pinMessage(id);
+  }
+
   @Get('message/:id')
   public async getMessage(@Param('id') messageId: string): Promise<MessageDTO> {
     return await this.messageService

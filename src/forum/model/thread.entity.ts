@@ -3,7 +3,9 @@ import {
   Column,
   Entity,
   Index,
+  JoinColumn,
   OneToMany,
+  OneToOne,
   PrimaryColumn,
 } from 'typeorm';
 import { MessageEntity } from './message.entity';
@@ -39,6 +41,13 @@ export class ThreadEntity {
 
   @Column({ default: false })
   admin_only: boolean;
+
+  @OneToOne(() => MessageEntity, (t) => t.thread, { nullable: true })
+  @JoinColumn({ name: 'pinned_message_id', referencedColumnName: 'id' })
+  pinned_message?: MessageEntity;
+
+  @Column({ nullable: true, name: 'pinned_message_id' })
+  pinnedMessageId: string;
 
   @OneToMany((type) => MessageEntity, (msg) => msg.thread, { eager: false })
   messages: MessageEntity[];

@@ -4,6 +4,7 @@ import {
   HttpException,
   Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { MessageEntity } from './model/message.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -321,39 +322,22 @@ LIMIT $3
       });
   }
 
-  private getThreadBaseQuery(withLastMessage: boolean = true) {
-    let baseQuery = this.threadEntityRepository
-      .createQueryBuilder('te')
-      .leftJoin(ThreadStatsView, 'ts', 'ts.thread_id = te.id')
-      .addSelect('ts.message_count', 'messageCount')
-      .addSelect(`ts.new_message_count`, 'newMessageCount')
+  public async pinMessage(id: string) {
+    const msg = await this.messageEntityRepository.findOneBy({
+      id,
+    });
+    if (!msg) {
+      throw new NotFoundException();
+    }
 
-      .groupBy(
-        'te.id, te.external_id, te.thread_type, te.title, ts.message_count, ts.new_message_count',
-      );
-
-    baseQuery = baseQuery
-      .leftJoin(
-        LastMessageView,
-        'op',
-        `op.thread_id = te.id and op.is_last = false`,
-      )
-      .addSelect('op.author', 'originalPoster')
-      .addGroupBy('op.author');
-
-    if (withLastMessage)
-      return baseQuery
-        .leftJoinAndMapOne(
-          'te.lastMessage',
-          LastMessageView,
-          'lm',
-          `lm.thread_id = te.id and lm.is_last = true`,
-        )
-        .addGroupBy(
-          'lm.id, lm.author, lm.deleted, lm.content, lm.updated_at, lm.created_at, lm.thread_id, lm.is_last',
-        );
-
-    return baseQuery;
+    await this.threadEntityRepository.update(
+      {
+        id: msg.thread_id,
+      },
+      {
+        pinnedMessageId: msg.id,
+      },
+    );
   }
 
   public async deleteMessage(id: string) {
@@ -427,5 +411,41 @@ LIMIT $3
         where: { author: steam_id },
       }),
     };
+  }
+
+  private getThreadBaseQuery(withLastMessage: boolean = true) {
+    let baseQuery = this.threadEntityRepository
+      .createQueryBuilder('te')
+      .leftJoinAndSelect('te.pinned_message', 'pm')
+      .leftJoin(ThreadStatsView, 'ts', 'ts.thread_id = te.id')
+      .addSelect('ts.message_count', 'messageCount')
+      .addSelect(`ts.new_message_count`, 'newMessageCount')
+
+      .groupBy(
+        'te.id, te.external_id, te.thread_type, te.title, ts.message_count, ts.new_message_count',
+      );
+
+    baseQuery = baseQuery
+      .leftJoin(
+        LastMessageView,
+        'op',
+        `op.thread_id = te.id and op.is_last = false`,
+      )
+      .addSelect('op.author', 'originalPoster')
+      .addGroupBy('op.author');
+
+    if (withLastMessage)
+      return baseQuery
+        .leftJoinAndMapOne(
+          'te.lastMessage',
+          LastMessageView,
+          'lm',
+          `lm.thread_id = te.id and lm.is_last = true`,
+        )
+        .addGroupBy(
+          'lm.id, lm.author, lm.deleted, lm.content, lm.updated_at, lm.created_at, lm.thread_id, lm.is_last',
+        );
+
+    return baseQuery;
   }
 }

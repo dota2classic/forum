@@ -67,6 +67,8 @@ export class ForumMapper {
       originalPoster: existing.originalPoster,
       lastMessage:
         existing.lastMessage && this.mapMessage(existing.lastMessage),
+      pinnedMessage:
+        existing.pinned_message && this.mapMessage(existing.pinned_message),
     };
   };
   public mapUser = async (
