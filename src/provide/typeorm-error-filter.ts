@@ -1,19 +1,21 @@
 import {
   ArgumentsHost,
-  Catch,
   ExceptionFilter,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 
-@Catch()
+// @Catch()
 export class CatchEverythingFilter implements ExceptionFilter {
+  private logger = new Logger('ExceptionFilter');
   constructor() {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
     // In certain situations `httpAdapter` might not be available in the
     // constructor method, thus we should resolve it here.
+
     const ctx = host.switchToHttp();
 
     const httpStatus =

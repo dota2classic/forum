@@ -423,6 +423,9 @@ LIMIT $3
 
       .groupBy(
         'te.id, te.external_id, te.thread_type, te.title, ts.message_count, ts.new_message_count',
+      )
+      .addGroupBy(
+        'pm.id, pm.author, pm.deleted, pm.content, pm.updated_at, pm.created_at, pm.thread_id',
       );
 
     baseQuery = baseQuery
