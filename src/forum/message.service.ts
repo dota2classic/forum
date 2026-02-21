@@ -1,14 +1,13 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException, } from '@nestjs/common';
 import { MessageEntity } from './model/message.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EventBus } from '@nestjs/cqrs';
 import { ReactionEntity } from './model/reaction.entity';
 import { ForumService } from './forum.service';
+import { didExpire } from '../gateway/util/expired';
+import { UserMutedException } from './exception/UserMutedException';
+import { ForumUserEntity } from './model/forum-user.entity';
 
 @Injectable()
 export class MessageService {
@@ -19,6 +18,8 @@ export class MessageService {
     @InjectRepository(ReactionEntity)
     private readonly reactionEntityRepository: Repository<ReactionEntity>,
     private readonly fs: ForumService,
+    @InjectRepository(ForumUserEntity)
+    private readonly forumUserEntityRepository: Repository<ForumUserEntity>,
   ) {}
 
   public async getMessage(id: string) {
@@ -30,6 +31,8 @@ export class MessageService {
     author: string,
     emoticonId: number,
   ) {
+    await this.checkUserForWrite(author);
+
     await this.reactionEntityRepository
       .createQueryBuilder()
       .insert()
@@ -89,5 +92,19 @@ export class MessageService {
       .leftJoinAndSelect('me.reactions', 'reactions', 'reactions.active')
       .leftJoinAndSelect('me.reply', 'reply', 'not reply.deleted')
       .getOne();
+  }
+
+  public async checkUserForWrite(steamId: string | undefined) {
+    if (!steamId) return;
+
+    const author = await this.forumUserEntityRepository.findOne({
+      where: { steam_id: steamId },
+    });
+    if (!author) return;
+
+    const muteExpired =
+      author.muted_until === undefined || didExpire(author.muted_until);
+
+    if (!muteExpired) throw new UserMutedException(author.muted_until);
   }
 }
