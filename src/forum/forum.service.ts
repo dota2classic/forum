@@ -22,7 +22,6 @@ import { ForumSqlFactory } from './forum-sql.factory';
 import { ThreadStatsView } from './model/thread-stats.view';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ForumMapper } from './forum.mapper';
-import { MessageService } from './message.service';
 
 @Injectable()
 export class ForumService {
@@ -42,8 +41,7 @@ export class ForumService {
     private readonly ebus: EventBus,
     private readonly mapper: ForumMapper,
     @InjectRepository(ThreadStatsView)
-    private readonly threadStatsViewRepository: Repository<ThreadStatsView>,
-    private readonly messageService: MessageService,
+    private readonly threadStatsViewRepository: Repository<ThreadStatsView>
   ) {}
 
   async postMessage(
