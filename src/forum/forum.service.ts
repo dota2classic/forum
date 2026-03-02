@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { MessageEntity } from './model/message.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Connection, DataSource, Repository } from 'typeorm';
+import { Connection, DataSource, MoreThan, Repository } from 'typeorm';
 import { ThreadEntity } from './model/thread.entity';
 import { EventBus } from '@nestjs/cqrs';
 import { ThreadType } from '../gateway/shared-types/thread-type';
@@ -22,6 +22,7 @@ import { ForumSqlFactory } from './forum-sql.factory';
 import { ThreadStatsView } from './model/thread-stats.view';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ForumMapper } from './forum.mapper';
+import { MessageService } from './message.service';
 
 @Injectable()
 export class ForumService {
@@ -42,6 +43,7 @@ export class ForumService {
     private readonly mapper: ForumMapper,
     @InjectRepository(ThreadStatsView)
     private readonly threadStatsViewRepository: Repository<ThreadStatsView>,
+    private readonly messageService: MessageService,
   ) {}
 
   async postMessage(
@@ -374,6 +376,22 @@ LIMIT $3
   }
 
   public async updateUser(steamId: string, muteUntil: string) {
+    if (
+      new Date(muteUntil).getTime() >
+      new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).getTime()
+    ) {
+      // Kinda perma mute
+      this.logger.log('Long mute: deleting all messages in last 7 days');
+      const msgs = await this.messageEntityRepository.find({
+        where: {
+          author: steamId,
+          created_at: MoreThan(new Date(Date.now() - 1000 * 60 * 60 * 24 * 7)),
+        },
+      });
+
+      await Promise.all(msgs.map(async (msg) => this.deleteMessage(msg.id)));
+      this.logger.log(`Deleted ${msgs.length} messages in last 7 days`);
+    }
     return this.forumUserEntityRepository.upsert(
       {
         muted_until: new Date(muteUntil),
