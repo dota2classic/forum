@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { MessageEntity } from './model/message.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Connection, DataSource, MoreThan, Repository } from 'typeorm';
+import { Connection, DataSource, In, MoreThan, Repository } from 'typeorm';
 import { ThreadEntity } from './model/thread.entity';
 import { EventBus } from '@nestjs/cqrs';
 import { ThreadType } from '../gateway/shared-types/thread-type';
@@ -41,7 +41,7 @@ export class ForumService {
     private readonly ebus: EventBus,
     private readonly mapper: ForumMapper,
     @InjectRepository(ThreadStatsView)
-    private readonly threadStatsViewRepository: Repository<ThreadStatsView>
+    private readonly threadStatsViewRepository: Repository<ThreadStatsView>,
   ) {}
 
   async postMessage(
@@ -341,6 +341,10 @@ LIMIT $3
   }
 
   public async deleteMessage(id: string) {
+    return this.deleteMessages([id]);
+  }
+
+  public async deleteMessages(ids: string[]) {
     const some: MessageEntity[] = (
       await this.messageEntityRepository
         .createQueryBuilder()
@@ -349,12 +353,14 @@ LIMIT $3
           deleted: true,
         })
         .returning('*')
-        .where({ id })
+        .where({ id: In(ids) })
         .execute()
     ).raw;
 
-    this.ebus.publish(
-      this.mapper.mapMessageToEvent(this.mapper.mapMessage(some[0])),
+    this.ebus.publishAll(
+      some.map((it) =>
+        this.mapper.mapMessageToEvent(this.mapper.mapMessage(it)),
+      ),
     );
 
     return some[0];
@@ -374,21 +380,21 @@ LIMIT $3
   }
 
   public async updateUser(steamId: string, muteUntil: string) {
-    if (
+    const isPermaMute =
       new Date(muteUntil).getTime() >
-      new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).getTime()
-    ) {
+      new Date(Date.now() + 1000 * 60 * 60 * 24 * 365).getTime();
+    if (isPermaMute) {
       // Kinda perma mute
-      this.logger.log('Long mute: deleting all messages in last 7 days');
+      this.logger.log('Long mute: deleting all messages in last 90 days');
       const msgs = await this.messageEntityRepository.find({
         where: {
           author: steamId,
-          created_at: MoreThan(new Date(Date.now() - 1000 * 60 * 60 * 24 * 7)),
+          created_at: MoreThan(new Date(Date.now() - 1000 * 60 * 60 * 24 * 90)),
         },
       });
 
       await Promise.all(msgs.map(async (msg) => this.deleteMessage(msg.id)));
-      this.logger.log(`Deleted ${msgs.length} messages in last 7 days`);
+      this.logger.log(`Deleted ${msgs.length} messages in last 90 days`);
     }
     return this.forumUserEntityRepository.upsert(
       {

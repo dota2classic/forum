@@ -5,7 +5,6 @@ import { Transport } from '@nestjs/microservices';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import configuration from './configuration';
 import { ConfigService } from '@nestjs/config';
-import { WinstonWrapper } from '@dota2classic/nest_logger';
 import { CatchEverythingFilter } from './provide/typeorm-error-filter';
 
 require('dotenv').config();
@@ -13,14 +12,7 @@ require('dotenv').config();
 async function bootstrap() {
   const config = new ConfigService(configuration());
 
-  const app = await NestFactory.create(AppModule, {
-    logger: new WinstonWrapper(
-      config.get('fluentbit.host'),
-      config.get('fluentbit.port'),
-      config.get('fluentbit.application'),
-      config.get('fluentbit.disabled'),
-    ),
-  });
+  const app = await NestFactory.create(AppModule);
 
   app.useGlobalFilters(new CatchEverythingFilter());
 
