@@ -1,7 +1,8 @@
 import './util/promise-combine';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { Transport } from '@nestjs/microservices';
+import { RedisOptions } from '@nestjs/microservices';
+import { getRedisTransportOptions } from './config/redis.config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import configuration from './configuration';
 import { ConfigService } from '@nestjs/config';
@@ -16,16 +17,7 @@ async function bootstrap() {
 
   app.useGlobalFilters(new CatchEverythingFilter());
 
-  app.connectMicroservice({
-    transport: Transport.REDIS,
-    options: {
-      url: `redis://${config.get('redis.host')}:6379`,
-      host: config.get('redis.host'),
-      retryAttempts: Infinity,
-      retryDelay: 5000,
-      password: config.get('redis.password'),
-    },
-  });
+  app.connectMicroservice<RedisOptions>(getRedisTransportOptions(config));
 
   const options = new DocumentBuilder()
     .setTitle('GameServer api')
