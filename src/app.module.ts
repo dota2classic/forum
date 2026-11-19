@@ -1,4 +1,6 @@
-import { Module } from '@nestjs/common';
+import { Inject, Module } from '@nestjs/common';
+import Redis from 'ioredis';
+import { logRedisErrors } from './config/redis.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Entities } from './typeorm-config';
 import { ForumController } from './forum/forum.controller';
@@ -113,4 +115,8 @@ import { RedlockModuleOptions } from '@dota2classic/redlock/dist/redlock.module-
     MessageModerationService,
   ],
 })
-export class AppModule {}
+export class AppModule {
+  constructor(@Inject('RedlockRedis') redlockRedis: Redis) {
+    logRedisErrors(redlockRedis, 'RedlockRedis');
+  }
+}
