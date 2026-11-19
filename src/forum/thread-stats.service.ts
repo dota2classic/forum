@@ -15,17 +15,17 @@ export class ThreadStatsService {
     private readonly redlock: Redlock,
   ) {}
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_5_MINUTES)
   public async refreshView() {
     await this.redlock.using(
       [`${ThreadStatsService.name}_materialized_views`],
       10000,
       async (signal) => {
         await this.threadEntityRepository.query(
-          `REFRESH MATERIALIZED VIEW thread_stats_view;`,
+          `REFRESH MATERIALIZED VIEW CONCURRENTLY thread_stats_view;`,
         );
         await this.threadEntityRepository.query(
-          `REFRESH MATERIALIZED VIEW last_message_view_materialized;`,
+          `REFRESH MATERIALIZED VIEW CONCURRENTLY last_message_view_materialized;`,
         );
         if (signal.aborted) {
           throw signal.error;
