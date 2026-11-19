@@ -1,19 +1,12 @@
-import { ClientsModule, RedisOptions, Transport } from '@nestjs/microservices';
+import { ClientsModule } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
+import { getRedisTransportOptions } from '../config/redis.config';
 
 export const RedisClient = () =>
   ClientsModule.registerAsync([
     {
       name: 'QueryCore',
-      useFactory(config: ConfigService): RedisOptions {
-        return {
-          transport: Transport.REDIS,
-          options: {
-            host: config.get('redis.host'),
-            password: config.get('redis.password'),
-          },
-        } satisfies RedisOptions;
-      },
+      useFactory: getRedisTransportOptions,
       inject: [ConfigService],
       imports: [],
     },
